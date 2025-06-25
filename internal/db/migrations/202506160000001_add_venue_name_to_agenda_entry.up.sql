@@ -1,0 +1,1 @@
+ALTER TABLE agenda_entry ADD COLUMN venuename TEXT DEFAULT "";

@@ -1,0 +1,1 @@
+ALTER TABLE agenda_entry ADD COLUMN enddate TEXT DEFAULT "";

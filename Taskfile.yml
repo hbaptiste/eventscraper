@@ -1,0 +1,221 @@
+# https://taskfile.dev
+
+version: '3'
+dotenv:
+  - config/local.env
+  - config/secrets.env
+
+silent: true
+
+vars:
+  STAGE: '{{.STAGE | default "test"}}'
+  # Access
+  SERVER_HOST: "{{.SERVER_HOST}}"
+  SERVER_USER: "{{.SERVER_USER}}"
+  SERVER_SITE_URL: '{{if eq .STAGE "test"}}{{.STAGE}}.{{.HOSTNAME}}{{else if eq .STAGE "prod"}}{{.HOSTNAME}}{{end}}'
+  SERVER_HOME: "/home/clients/{{.CLIENT_CODE}}/sites/{{.SERVER_SITE_URL}}"
+  ENV_FILES: "config/secrets.env config/{{.STAGE}}.env"
+
+  # Paths
+  REMOTE_API_DIR: "{{.SERVER_HOME}}/api"
+  REMOTE_REACT_DIR: "{{.SERVER_HOME}}/front"
+  REMOTE_MIGRATION_DIR: "{{.REMOTE_API_DIR}}/internal/db/migrations"
+  BACKUP_DIR: "{{.REMOTE_API_DIR}}/backup/"
+
+  # Server PORT
+  LOCAL_BUILD_PATH: "./build"
+  LOCAL_FRONT_BUILD_PATH: "./afromemo/dist"
+  MIGRATIONS_PATH: "./internal/db/migrations"
+  BACKEND_EXECUTABLE_NAME: api_server
+  
+  # PID
+  PID_FILE: "{{.REMOTE_API_DIR}}/{{.BACKEND_EXECUTABLE_NAME}}.pid"
+
+env:
+  DATABASE_URL: "{{.REMOTE_BACKEND_DIR}}/agenda.db"
+  API_BACKEND_PORT: 8082
+
+tasks:
+  test:envars:
+    cmds:
+      - echo "{{.REMOTE_API_DIR}}"
+      - echo "{{.PID_FILE}}"
+
+  default:
+    cmds:
+      - task --list
+    silent: true
+
+  build:backend:
+    desc: Build the API Server for the backend      
+    cmds:
+      - echo "Building Go Backend"
+      - GOOS=linux GOARCH=amd64 go build -o {{.LOCAL_BUILD_PATH}}/{{.BACKEND_EXECUTABLE_NAME}} ./main.go
+      - echo "{{.BACKEND_EXECUTABLE_NAME}} build"
+    generates:
+      - "{{.LOCAL_BUILD_PATH}}/{{.BACKEND_EXECUTABLE_NAME}}"
+  
+  apiserver:start:
+    desc: Start the server locally
+    env:
+      FRONT_URL: http://localhost:5173
+      SECURED_COOKIES: false
+    cmds:
+      - go run ./main.go
+    deps:
+      - apiserver:stop
+
+  apiserver:stop:
+    desc: Stop the local server
+    cmds:
+      - pkill -f "go run ./main.go" || true
+
+  deploy:mkdirs:
+    desc: Creates necessary directories on the remote server
+    cmds:
+      - |
+        ssh {{.SERVER_USER}}@{{.SERVER_HOST}} '
+          mkdir -p {{.REMOTE_REACT_DIR}}
+          mkdir -p {{.REMOTE_API_DIR}}/
+          mkdir -p {{.REMOTE_API_DIR}}/logs
+          mkdir -p {{.REMOTE_API_DIR}}/config
+        '
+
+  deploy:transfer:
+    desc: Transfer build to server
+    cmds:
+      - echo "Transfering <env, db, conf> to SERVER_HOST"
+      - scp -r {{.LOCAL_BUILD_PATH}}/* {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_API_DIR}}/
+      - rsync -avz {{.LOCAL_FRONT_BUILD_PATH}}/* {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.SERVER_HOME}}/
+      # migration
+      - scp -r {{.MIGRATIONS_PATH}}/* {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_MIGRATION_DIR}}
+      # db + htaccess
+      - rsync -avz ./agenda.db {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_API_DIR}}/agenda.db
+      - rsync -avz ./remote/.htaccess {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.SERVER_HOME}}/.htaccess
+
+  deploy:transfer-build:
+    desc: Transfer front
+    cmds:
+      - echo "transfer front"
+      - rsync -avz {{.LOCAL_FRONT_BUILD_PATH}}/* {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.SERVER_HOME}}/
+
+  deploy:start-service:
+    desc: Start API Service in the background
+    deps:
+      - task: deploy:stop-service
+      - task: deploy:load-env-files
+    cmds: 
+      - |
+        ssh {{.SERVER_USER}}@{{.SERVER_HOST}} '
+          cd {{.REMOTE_API_DIR}} &&
+          chmod +x {{.BACKEND_EXECUTABLE_NAME}} &&
+          set -a &&
+          for env_file in {{.ENV_FILES}}; do
+            if [ -f "$env_file" ]; then
+                source "$env_file"
+            else
+              echo "$env_file not found!"
+            fi
+          done &&
+          set +a &&
+          nohup ./{{.BACKEND_EXECUTABLE_NAME}} > logs/app.log 2>&1 &
+          sleep 1 &&
+          pgrep "{{.BACKEND_EXECUTABLE_NAME}}" > {{.PID_FILE}}
+        '
+
+  deploy:stop-service:
+    desc: Stop API Service
+    cmds:
+      - ssh {{.SERVER_USER}}@{{.SERVER_HOST}} "ps -aux"
+      - |
+        ssh {{.SERVER_USER}}@{{.SERVER_HOST}} '
+          cd {{.REMOTE_API_DIR}} &&
+          if [ -f {{.PID_FILE}} ]; then
+            PID=$(cat {{.PID_FILE}})
+            if kill -0 $PID 2>/dev/null; then
+              kill $PID
+              echo "Stopped process $PID"
+            else
+              echo "Process $PID not running"
+            fi
+            rm -f {{.PID_FILE}}
+          else
+              echo "No PID file found"
+          fi
+        '
+
+  deploy:load-env-files:
+    desc: Load env Files 
+    deps:
+      - task: deploy:mkdirs
+    silent: true
+    cmds:
+      - scp config/secrets.env {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_API_DIR}}/config/secrets.env
+      - scp config/{{.STAGE}}.env {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_API_DIR}}/config/{{.STAGE}}.env
+      - |
+        ssh {{.SERVER_USER}}@{{.SERVER_HOST}} '
+          cd {{.REMOTE_API_DIR}} &&
+          for env_file in {{.ENV_FILES}}; do
+            if [ -f "$env_file" ]; then
+                source "$env_file"
+            else
+              echo "$env_file not found!"
+            fi
+          done
+        '
+
+  front:start:
+    desc: Start the agenda
+    cmds:
+      - | 
+        cd ./afromemo && npm run dev
+  
+  build:front:
+    desc: build the front
+    cmds:
+      - |
+        cd ./afromemo/src && npm run build -- --mode {{.STAGE}}
+
+  deploy:backup-db:
+    desc: Backup db in remote
+    vars:
+      DB_PATH: ""
+    cmds:
+      - |
+        ssh {{.SERVER_USER}}@{{.SERVER_HOST}} '
+          mkdir -p {{.BACKUP_DIR}} &&
+          CURRENT_DATE=$(date +"%Y-%m-%d") &&
+          BACKUP_FILE="{{.BACKUP_DIR}}/agenda-${CURRENT_DATE}.bak" &&
+          cp {{.REMOTE_API_DIR}}/agenda.db ${BACKUP_FILE}
+        '
+      - echo "copy stage db to local"
+      - scp {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_API_DIR}}/agenda.db agenda.db
+
+
+  deploy:permission:
+    desc: Sets execute permission on the backend
+    cmds:
+      - |
+        ssh {{.SERVER_USER}}@{{.SERVER_HOST}} "chmod +x {{.REMOTE_API_DIR}}/{{.BACKEND_EXECUTABLE_NAME}}"
+      - |
+        ssh {{.SERVER_USER}}@{{.SERVER_HOST}} "chmod 664 {{.REMOTE_API_DIR}}/agenda.db || true" # Allow owner/group read/write
+
+  dev:start:
+    desc: start dev dependencies
+    cmds:
+      - echo "Starting dev..."
+    deps:
+     - front:start
+     - apiserver:start
+
+  deploy:
+    desc: Deploy to remote
+    cmds:
+      - echo "Deploying"
+    deps: 
+      #- front:build
+      - build:backend
+      - deploy:mkdirs
+      - deploy:transfer
+      - deploy:permission
+      - deploy:start-service

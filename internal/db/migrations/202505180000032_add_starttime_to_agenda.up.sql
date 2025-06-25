@@ -1,0 +1,2 @@
+ALTER TABLE agenda_entry ADD COLUMN starttime TEXT DEFAULT "" NOT NULL;
+ALTER TABLE agenda_entry ADD COLUMN endtime TEXT DEFAULT "" NOT NULL;

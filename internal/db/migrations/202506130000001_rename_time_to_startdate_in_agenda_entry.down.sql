@@ -1,0 +1,1 @@
+ALTER TABLE agenda_entry RENAME COLUMN startdate TO time;

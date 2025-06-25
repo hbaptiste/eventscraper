@@ -1,0 +1,1 @@
+ALTER TABLE agenda_entry ADD COLUMN event_lifecycle_status TEXT DEFAULT "" NOT NULL;

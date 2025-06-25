@@ -1,0 +1,10 @@
+
+{
+    "name": "FIDH",
+    "url":"https://www.ladecadanse.ch/evenement.php?idE=479181",
+    "scraping_map": {
+        "#entete_contenu_titre > a:nth-child(2) > time:nth-child(1)": "time",
+        "h3.left":"title",
+        ".adr": "address"
+    }
+}

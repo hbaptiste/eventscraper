@@ -1,0 +1,1 @@
+ALTER TABLE agenda_entry ADD COLUMN event_owner INTEGER DEFAULT 0 NOT NULL;

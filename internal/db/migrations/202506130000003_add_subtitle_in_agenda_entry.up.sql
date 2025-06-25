@@ -1,0 +1,1 @@
+ALTER TABLE agenda_entry ADD COLUMN subtitle TEXT DEFAULT "";

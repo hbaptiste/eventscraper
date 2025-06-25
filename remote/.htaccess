@@ -1,0 +1,34 @@
+SetOutputFilter DEFLATE
+AddOutputFilterByType DEFLATE ...
+
+# SECTION BEGIN GIT PROTECTION
+RedirectMatch 404 /\.git
+# SECTION END GIT PROTECTION
+
+Options -MultiViews
+RewriteEngine On
+# RewriteBase / # <-- Add this if your app is served from a subdirectory (e.g., /myapp/)
+
+# --- 1. Reverse Proxy API requests to Go backend ---
+# Match requests starting with /api/ AND proxy them.
+# The [L] flag stops processing if this rule matches (and mod_proxy is enabled).
+# Ensure the RewriteBase is set correctly, or use the full path if needed.
+RewriteRule ^api/(.*)$ http://localhost:8082/api/$1 [P,L] # Requires mod_proxy and mod_proxy_http enabled!
+                                                         # Also ensure Go app listens on localhost:8080
+RewriteRule ^images/(.*)$ http://localhost:8082/images/$1 [P,L] # Requires mod_proxy and mod_proxy_http enabled!
+
+
+# --- 2. Serve React Static Files and handle SPA routing ---
+# Skip the following rules if the request is for an existing file or directory
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Skip the following rules if the request path STARTS WITH /api/
+# (This condition is a safeguard, but the order/L flag above should handle it)
+RewriteCond %{REQUEST_URI} !^/api/ [NC]
+RewriteCond %{REQUEST_URI} !^/images/ [NC]
+
+
+# If the request is not for an existing file/directory AND not /api/,
+# internally rewrite it to index.html for client-side routing
+RewriteRule . /index.html [L] # <-- Rewrite to index.html
