@@ -8,6 +8,7 @@ import (
 	"log"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -114,6 +115,11 @@ func (repo *AgendaRepository) FindAll(ctx context.Context, filter Filter) ([]db.
 	query += " ORDER BY startdate ASC;"
 
 	var tagString string
+	var startDateString string
+	var endDateString string
+	var startTimeString string
+	var endTimeString string
+
 	rows, err := repo.db.Query(query)
 	if err != nil {
 		fmt.Errorf("%v", err)
@@ -127,7 +133,7 @@ func (repo *AgendaRepository) FindAll(ctx context.Context, filter Filter) ([]db.
 			&entry.Link,
 			&entry.Price,
 			&entry.Address,
-			&entry.StartDate,
+			&startDateString,
 			&entry.Description,
 			&entry.Poster,
 			&entry.Category,
@@ -136,16 +142,33 @@ func (repo *AgendaRepository) FindAll(ctx context.Context, filter Filter) ([]db.
 			&entry.Status,
 			&entry.EventLifecycleStatus,
 			&entry.Place,
-			&entry.StartTime,
-			&entry.EndTime,
+			&startTimeString,
+			&endTimeString,
 			&entry.Subtitle,
-			&entry.EndDate,
+			&endDateString,
 			&entry.VenueName,
 		)
 		if err != nil {
 			fmt.Printf("agenda_repository %v\n", err)
 			return nil, fmt.Errorf("Error while scanning agenda\n")
 		}
+		if startDate, err := time.Parse(time.RFC3339, startDateString); err == nil {
+			fmt.Printf("%v\n", err)
+			entry.StartDate = startDate
+		}
+
+		if endDate, err := time.Parse(time.RFC3339, endDateString); err == nil {
+			entry.EndDate = endDate
+		}
+		if startTime, err := time.Parse(time.RFC3339, startDateString); err == nil {
+			fmt.Printf("%v\n", err)
+			entry.StartTime = startTime
+		}
+		if endTime, err := time.Parse(time.RFC3339, startDateString); err == nil {
+			fmt.Printf("%v\n", err)
+			entry.EndTime = endTime
+		}
+
 		if len(tagString) == 0 {
 			entry.Tags = make([]string, 0)
 		} else {

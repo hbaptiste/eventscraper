@@ -5,6 +5,8 @@ import PageAgendaItemDetailView from "./pages/PageAgendaItemDetailView";
 import WithProtection from "./components/WithProtection";
 import React from "react";
 import MainLayout from "./layout/Main";
+import PageFormConfirmation from "./pages/PageFormConfirmation";
+import PageAgendaPublicForm from "./pages/PagePublicAgendaForm";
 
 const ProtectedForm = WithProtection(PageAgendaForm);
 
@@ -22,6 +24,21 @@ const Routes = [
         name: "AgendaForm",
         path: "agenda/create",
         element: <ProtectedForm />,
+      },
+      {
+        name: "PublicAgendaForm",
+        path: "agenda/public/new",
+        element: <PageAgendaForm />,
+      },
+      {
+        name: "PublicAgendaFormEdit",
+        path: "agenda/public/:tokenId/edit",
+        element: <PageAgendaPublicForm />,
+      },
+      {
+        name: "PublicFormConfirmation",
+        path: "agenda/form-confirmation",
+        element: <PageFormConfirmation />,
       },
       {
         name: "AgendaForm",

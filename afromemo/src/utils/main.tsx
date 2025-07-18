@@ -147,7 +147,7 @@ const refreshToken = async (): Promise<string> => {
 
 export const fetch = async (url: string, options: Record<string, any>) => {
   const response = await _fetch(url, options);
-  //refresh token
+  // refresh token
   if (response.status == 401) {
     const errorHandling = options.onAuthError || onAuthError;
     if (typeof errorHandling == "function") {
@@ -172,7 +172,6 @@ const onAuthError = async (params: {
     };
     return await fetch(url, options);
   } catch (e) {
-    console.log(e);
     location.href = "/login";
   }
 };

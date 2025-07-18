@@ -18,7 +18,7 @@ func TransformPosterName(originalFilename string) string {
 	return newFilename
 }
 
-func getClientIP(r *http.Request) string {
+func GetClientIP(r *http.Request) string {
 	forwarded := r.Header.Get("X-Forwared-For")
 	if forwarded != "" {
 		return forwarded

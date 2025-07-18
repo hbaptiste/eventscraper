@@ -59,30 +59,162 @@ type ScrapingTask struct {
 	CreatedTime    time.Time
 }
 
+var (
+	dateLayout = "2006-01-02"
+	timeLayout = "15:04"
+)
+
+type ErrorMap = map[string]string
+
 type AgendaEntry struct {
-	ID                   string   `json:"id"`
-	Title                string   `json:"title"`
-	Link                 string   `json:"link"`
-	Price                int      `json:"price"`
-	VenueName            string   `json:"venuename"`
-	Address              string   `json:"address"`
-	StartDate            string   `json:"startdate"`
-	Description          string   `json:"description"`
-	Poster               string   `json:"poster"`
-	Category             string   `json:"category"`
-	Tags                 []string `json:"tags"`
-	Infos                string   `json:"infos"`
-	Status               Status   `json:"status"`
-	Place                string   `json:"place"`
-	EventLifecycleStatus string   `json:"eventLifecycleStatus"`
-	StartTime            string   `json:"starttime"`
-	EndTime              string   `json:"endtime"`
-	Subtitle             string   `json:"subtitle"`
-	EndDate              string   `json:"enddate"`
+	ID                   string    `json:"id"`
+	Title                string    `json:"title"`
+	Link                 string    `json:"link"`
+	Price                int       `json:"price"`
+	VenueName            string    `json:"venuename"`
+	Address              string    `json:"address"`
+	StartDate            time.Time `json:"startdate"`
+	Description          string    `json:"description"`
+	Poster               string    `json:"poster"`
+	Category             string    `json:"category"`
+	Tags                 []string  `json:"tags"`
+	Infos                string    `json:"infos"`
+	Status               Status    `json:"status"`
+	Place                string    `json:"place"`
+	EventLifecycleStatus string    `json:"eventLifecycleStatus"`
+	StartTime            time.Time `json:"starttime"`
+	EndTime              time.Time `json:"endtime"`
+	Subtitle             string    `json:"subtitle"`
+	EndDate              time.Time `json:"enddate"`
 }
 
 func (entry AgendaEntry) FormatTagsToString() string {
 	return strings.Join(entry.Tags, ",")
+}
+func (entry AgendaEntry) ToJSON() (string, error) {
+	jsonData, err := json.Marshal(entry)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonData), nil
+}
+func (entry AgendaEntry) MarshalJSON() ([]byte, error) {
+	type Alias AgendaEntry
+	return json.Marshal(&struct {
+		StartDate string `json:"startdate"`
+		EndDate   string `json:"enddate"`
+		StartTime string `json:"starttime"`
+		EndTime   string `json:"endtime"`
+		*Alias
+	}{
+		StartDate: entry.StartDate.Format("2006-01-02"),
+		EndDate:   entry.EndDate.Format("2006-01-02"),
+		StartTime: entry.StartTime.Format("15:04"),
+		EndTime:   entry.EndTime.Format("15:04"),
+		Alias:     (*Alias)(&entry),
+	})
+}
+
+func (entry *AgendaEntry) UnmarshalJSON(data []byte) error {
+	type Alias AgendaEntry
+	aux := &struct {
+		StartDate string `json:"startdate"`
+		EndDate   string `json:"enddate"`
+		StartTime string `json:"starttime"`
+		EndTime   string `json:"endtime"`
+		*Alias
+	}{
+		Alias: (*Alias)(entry),
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	if aux.StartDate != "" {
+		startDate, err := time.Parse("2006-01-02", aux.StartDate)
+		if err != nil {
+			return fmt.Errorf("failed to parse startdate: %w", err)
+		}
+		entry.StartDate = startDate
+	}
+
+	if aux.EndDate != "" {
+		endDate, err := time.Parse("2006-01-02", aux.EndDate)
+		if err != nil {
+			return fmt.Errorf("failed to parse enddate: %w", err)
+		}
+		entry.EndDate = endDate
+	}
+
+	// Parse times using time-only format
+	if aux.StartTime != "" {
+		startTime, err := time.Parse("15:04", aux.StartTime)
+		if err != nil {
+			return fmt.Errorf("failed to parse starttime: %w", err)
+		}
+		entry.StartTime = startTime
+	}
+
+	if aux.EndTime != "" {
+		endTime, err := time.Parse("15:04", aux.EndTime)
+		if err != nil {
+			return fmt.Errorf("failed to parse endtime: %w", err)
+		}
+		entry.EndTime = endTime
+	}
+
+	return nil
+
+}
+
+func UnmarshalAgendaEntry(data []byte) (*AgendaEntry, error) {
+	// rawjson
+	var rawData map[string]interface{}
+
+	if err := json.Unmarshal(data, &rawData); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal to map: %v", err)
+	}
+	formDataValue, exists := rawData["formData"]
+	if !exists {
+		return nil, fmt.Errorf("missing key in payload")
+	}
+
+	formData, ok := formDataValue.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("Can't extract agendaEntry...")
+	}
+
+	timesField := []string{"starttime", "endtime", "startdate", "enddate"}
+
+	for _, field := range timesField {
+		if value, exists := formData[field]; exists {
+			// convert value interface -> string
+			var layout = dateLayout
+			if dateString, ok := value.(string); ok && dateString != "" {
+				if strings.Contains(field, "time") {
+					layout = timeLayout // time
+				}
+				input, err := time.Parse(layout, dateString)
+				if err != nil {
+					return nil, err
+				}
+				formData[field] = input.Format(time.RFC3339)
+			}
+		}
+	}
+	// save edit
+	rawData["formData"] = formData
+	// back to json
+	agendaJSON, err := json.Marshal(rawData["formData"])
+	if err != nil {
+		return nil, fmt.Errorf("Failed to marshal agenda entry %v", err)
+	}
+	// json -> agendaEntry
+	var entry AgendaEntry
+	if err := json.Unmarshal(agendaJSON, &entry); err != nil {
+		return nil, fmt.Errorf("Failed to unmarshal to agenda %v", err)
+	}
+	return &entry, nil
+
 }
 
 type User struct {

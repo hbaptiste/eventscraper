@@ -2,14 +2,12 @@ package api
 
 import (
 	"context"
-	"crypto/rand"
 	"database/sql"
 	"dpatrov/scraper/internal/db"
 	"dpatrov/scraper/internal/db/repository"
 	"dpatrov/scraper/internal/gendb"
 	"dpatrov/scraper/internal/types"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,12 +18,13 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	internal "dpatrov/scraper/internal"
 
 	"dpatrov/scraper/internal/utils"
+
+	"dpatrov/scraper/internal/validators"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -71,9 +70,11 @@ type ErrorResponse struct {
 	Error   bool   `json:"error"`
 }
 
-/*
-response
-*/
+type PublishActionRequest struct {
+	FormData db.AgendaEntry `json:"formData"`
+	Action   string         `json:"action"`
+	Token    string         `json:"token"`
+}
 
 type Response interface {
 	IsResponse() bool
@@ -134,14 +135,24 @@ type ServiceMiddleWare struct {
 	taskRepository   repository.TaskRepository
 	userRepository   repository.UserRepository
 	queries          gendb.Queries
+	mailer           utils.Mailer
 }
 
 func NewServiceMiddleWare(db *sql.DB) *ServiceMiddleWare {
+	mailerConf := utils.MailerConf{
+		SmtpHost:     "mail.infomaniak.com",
+		SmtpUser:     "info@afromemo.ch",
+		SmtpPort:     "465",
+		SmtpPassword: os.Getenv("SMTP_PASSWORD"),
+		BaseUrl:      os.Getenv("FRONT_URL"),
+		FromEmail:    "info@afromemo.ch",
+	}
 	return &ServiceMiddleWare{
 		agendaRepository: *repository.NewAgendaRepository(db),
 		taskRepository:   *repository.NewTaskRepository(db),
 		userRepository:   *repository.NewUserRepository(db),
 		queries:          *gendb.New(db),
+		mailer:           *utils.NewMailer(mailerConf),
 	}
 }
 
@@ -335,7 +346,6 @@ func refeshTokenWithServices(sc *ServiceMiddleWare) http.HandlerFunc {
 			return
 		}
 		refreshToken := cookie.Value
-		log.Printf("Inside refreshTokenWithServices... Cookie received: %s", refreshToken)
 		token, err := jwt.ParseWithClaims(refreshToken, &RefreshClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return []byte(jwtRefreshKey), nil
 		})
@@ -411,13 +421,14 @@ func authMiddleware(next http.Handler) http.Handler {
 		}
 		// token extraction
 		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-
+		fmt.Printf("Received access Token [%v]", tokenStr)
 		// Parse the token
 		claims := &AccessClaims{}
 		token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
 			return jwtKey, nil
 		})
 		if err != nil || !token.Valid {
+			fmt.Printf("Access Claim Error %v", err)
 			writeJSONResponse(resp, http.StatusUnauthorized, ErrorResponse{
 				Message: "Invalid or expired token",
 			})
@@ -488,7 +499,7 @@ func getAllEvents(resp http.ResponseWriter, req *http.Request) {
 	queryFilter["status"] = 1
 
 	userId := req.Context().Value(userIDKey)
-	log.Printf("Current userId %s", userId)
+	log.Printf("Current userId %d", userId)
 	if userId != nil {
 		userRepo, err := GetRepository[repository.UserRepository](req.Context(), userRepoKey)
 		if err != nil {
@@ -577,7 +588,7 @@ func handlePoster(agendaEntry *db.AgendaEntry) {
 				dest := filepath.Join(dir, "uploads", newFilename)
 
 				// use copy
-				log.Printf("Create file %s", dest)
+				log.Printf("Created file %s!", dest)
 				destFile, err := os.Create(dest)
 				if err != nil {
 					log.Printf("Error while creating file %v", err)
@@ -597,6 +608,18 @@ func handlePoster(agendaEntry *db.AgendaEntry) {
 		}
 	}
 }
+func createAgendaEntry(req *http.Request, agendyEntry *db.AgendaEntry) (bool, error) {
+	agendaRepository, err := GetRepository[repository.AgendaRepository](req.Context(), agendaRepoKey)
+	if err != nil {
+		return false, err
+	}
+	_, err = agendaRepository.Create(req.Context(), agendyEntry)
+	if err != nil {
+		fmt.Printf("createAgendaEntry::%v")
+		return false, errors.New("Failed to create new entry")
+	}
+	return true, nil
+}
 
 func agendaHandler(resp http.ResponseWriter, req *http.Request) {
 	switch req.Method {
@@ -613,26 +636,12 @@ func agendaHandler(resp http.ResponseWriter, req *http.Request) {
 			return
 		}
 		// Persist - BUILD AN INJECTOR
-		agendaRepository, err := GetRepository[repository.AgendaRepository](req.Context(), agendaRepoKey)
-		if err != nil {
-			writeJSONResponse(resp, http.StatusInternalServerError, ErrorResponse{
-				Message: "Failed to get agenda repository",
-				Error:   true,
-			})
-			return
-		}
-		// persist file hereif need /temp
 		handlePoster(&agendaEntry)
-		log.Printf("current entity Status: %d", agendaEntry.Status)
-		newEntry, err := agendaRepository.Create(req.Context(), &agendaEntry)
+		_, err = createAgendaEntry(req, &agendaEntry)
 		if err != nil {
-			writeJSONResponse(resp, http.StatusInternalServerError, ErrorResponse{
-				Message: "Failed to create new entry",
-				Error:   true,
-			})
 			return
 		}
-		json.NewEncoder(resp).Encode(newEntry)
+		json.NewEncoder(resp).Encode(agendaEntry)
 	case http.MethodPatch:
 		agendaStatusHandler(resp, req)
 	case http.MethodPut:
@@ -776,64 +785,71 @@ func uploadHandler(resp http.ResponseWriter, req *http.Request) {
 	})
 }
 
-// creation du token
-// key
-// generat
-type CSRFTokenStore struct {
-	tokens map[string]time.Time
-	mu     sync.Mutex
-}
-
-func NewCRSFTokenStore() *CSRFTokenStore {
-	store := &CSRFTokenStore{
-		tokens: make(map[string]time.Time),
-	}
-	go store.cleanup() // remove expired
-	return store
-}
-
-var crsfToken = NewCRSFTokenStore()
-
-func (s *CSRFTokenStore) generateToken() string {
-	b := make([]byte, 32)
-	rand.Read(b)
-	token := hex.EncodeToString(b)
-	// save to store
-	s.mu.Lock()
-	s.tokens[token] = time.Now().Add(time.Hour)
-	s.mu.Unlock()
-	return token
-}
-
-func (s *CSRFTokenStore) validateToken(token string) bool {
-	s.mu.Lock()
-	expiry, exists := s.tokens[token]
-	s.mu.Unlock()
-	if !exists || time.Now().After(expiry) {
-		return false
-	}
-
-	s.mu.Lock()
-	delete(s.tokens, token) //token was used
-	s.mu.Unlock()
-
-	return true
-}
-
-func (s *CSRFTokenStore) cleanup() {
-	ticker := time.NewTicker(10 * time.Minute)
-	select {
-	case <-ticker.C:
-		s.mu.Lock()
-		now := time.Now()
-		for token, expiry := range s.tokens {
-			if now.After(expiry) {
-				delete(s.tokens, token)
-			}
+func AdminActionHandler(service *ServiceMiddleWare) HandlerFunc {
+	return func(writer http.ResponseWriter, req *http.Request) {
+		var actionRequest PublishActionRequest
+		err := json.NewDecoder(req.Body).Decode(&actionRequest)
+		if err != nil {
+			fmt.Printf("error:: %v", err)
+			writeJSONResponse(writer, http.StatusUnprocessableEntity, ErrorResponse{Message: "Unprocessable entity"})
+			return
 		}
-		s.mu.Unlock()
+		if actionRequest.Action == "" {
+			writeJSONResponse(writer, http.StatusBadRequest, ErrorResponse{Message: "Action is missing"})
+			return
+		}
+
+		if actionRequest.Action == "publish" {
+			formSubmission, err := service.queries.GetSubmissionByToken(req.Context(), gendb.GetSubmissionByTokenParams{EditToken: actionRequest.Token})
+			if err != nil {
+				log.Printf("GetSubmissionByToken: %v", err)
+				writeJSONResponse(writer, http.StatusUnprocessableEntity, ErrorResponse{Message: "Submission Not found"})
+				return
+			}
+			agendaEntry := actionRequest.FormData
+			issues := validators.AgendaEntrySchema.Validate(&agendaEntry)
+			if issues != nil {
+				log.Printf("%v", issues)
+				writeJSONResponse(writer, http.StatusUnprocessableEntity, ErrorResponse{Message: "Form is not valid"})
+				return
+			}
+			// Deal with poster // if it has changed
+			handlePoster(&agendaEntry)
+			// We keep the same ID && update status
+			agendaEntry.ID = formSubmission.ID
+			agendaEntry.Status = db.Status_Active
+
+			// We update submission status with the updated data
+			agendaEntryData, err := json.Marshal(actionRequest.FormData)
+			if err != nil {
+				log.Printf("%v", err)
+				writeJSONResponse(writer, http.StatusUnprocessableEntity, ErrorResponse{Message: err.Error()})
+				return
+			}
+			// how to do transactions ?
+
+			_, err = service.agendaRepository.Create(req.Context(), &agendaEntry)
+			if err != nil {
+				fmt.Printf("error::createAgendaEntry %v", err)
+				writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
+					Message: err.Error(),
+				})
+				return
+			}
+			service.queries.UpdateSubmissionStatus(req.Context(), gendb.UpdateSubmissionStatusParams{
+				Status:    "active",
+				Data:      string(agendaEntryData),
+				EditToken: formSubmission.EditToken,
+			})
+			writeJSONResponse(writer, http.StatusOK, OkResponse{
+				Message: "ok",
+			})
+		}
 	}
 }
+
+// creation du token store
+var crsfToken = utils.GetCRSFTokenStore()
 
 func csrfTokenHandler(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
@@ -844,12 +860,11 @@ func csrfTokenHandler(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	token := crsfToken.generateToken()
+	token := crsfToken.GenerateToken()
 	resp.Header().Set("Content-Type", "application/json")
 	writeJSONResponse(resp, http.StatusAccepted, CSRFTokenResponse{
 		CSRFToken: token,
 	})
-
 }
 
 func StartApiServer(portNumber int) {
@@ -889,6 +904,8 @@ func StartApiServer(portNumber int) {
 
 	// <mux>
 	mux := http.NewServeMux()
+	//
+
 	// auth routes
 	mux.HandleFunc("/api/login", loginHandler)
 	mux.HandleFunc("/api/health", healthHandler)
@@ -896,7 +913,12 @@ func StartApiServer(portNumber int) {
 	mux.HandleFunc("/api/agenda/", withCORS(agendaHandler))
 	mux.HandleFunc("/api/agenda", withCORS(agendaHandler))
 
+	// token
 	mux.HandleFunc("/api/csrfToken", withCORS(csrfTokenHandler))
+
+	// handle visitor submission
+	mux.HandleFunc("/api/submissions/", withCORS(SubmissionHandler(serviceMiddleWare)))
+	mux.HandleFunc("/api/submissions", withCORS(HandlerVisitorForm(serviceMiddleWare)))
 
 	// to remove
 	mux.HandleFunc("/api/upload", withCORS(uploadHandler))
@@ -922,6 +944,13 @@ func StartApiServer(portNumber int) {
 
 	protectedRoutes.HandleFunc("/user/", userHandler)
 	protectedRoutes.HandleFunc("/user", userHandler)
+
+	// user submission
+	protectedRoutes.HandleFunc("/submissions", SubmissionHandler(serviceMiddleWare))
+
+	protectedRoutes.HandleFunc("/agenda/admin", withCORS(AdminActionHandler(serviceMiddleWare)))
+	// agenda/publication?action=publish
+	// Post formsubmission
 
 	// Clean
 	stripped := http.StripPrefix("/api/protected", protectedRoutes)

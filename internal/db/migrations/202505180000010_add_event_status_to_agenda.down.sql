@@ -1,0 +1,1 @@
+ALTER TABLE agenda_entry REMOVE COLUMN event_lifecycle_status;

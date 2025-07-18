@@ -208,6 +208,13 @@ tasks:
      - front:start
      - apiserver:start
 
+  dev:gen-model:
+    desc: Generate all repo
+    cmds:
+      - sqlc generate
+
+
+
   deploy:
     desc: Deploy to remote
     cmds:

@@ -24,6 +24,9 @@ export interface AgendaItem {
   starttime: string;
   endtime: string;
   venuename: string;
+  email?: string;
+  userSubmission?: boolean;
+  token?: string;
 }
 export enum Places {
   GENEVE = "Genève",
@@ -39,4 +42,9 @@ export enum Categories {
   MUSIQUE = "Musique et fête",
   JEUNES = "Jeunes",
   DIVERS = "Divers",
+}
+
+export interface UserSubmission {
+  submission: AgendaItem;
+  email: string;
 }

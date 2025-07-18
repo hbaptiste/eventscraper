@@ -6,18 +6,23 @@ import useAuthStore, { AuthInfos } from "../store/useAuthStore";
 import { AgendaItem, Places, Status } from "../types";
 import { Plus } from "lucide-react";
 import { fetch, formatDateRange, getPlace } from "../utils/main";
+
 const AgendaListView = () => {
   const [agendaItems, setAgendaItems] = useState<AgendaItem[]>(agendaFixture);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  //const [preventNextQuery, setPreventNextQuery] = useState<boolean>(false);
+  const [userSubmissionIsLoaded, setUserSubmissionIsLoaded] =
+    useState<boolean>(false);
+
+  // const [preventNextQuery, setPreventNextQuery] = useState<boolean>(false);
 
   const [filter, setFilter] = useState({
     category: "",
     status: "",
     searchTerm: "",
     place: "",
+    userSubmitted: false, // Add this
   });
   const [filteredItems, setFilteredItems] = useState<AgendaItem[]>(agendaItems);
   const API_URL = import.meta.env.VITE_API_URL;
@@ -68,13 +73,12 @@ const AgendaListView = () => {
           }
           headers.Authorization = `Bearer ${token}`;
         }
-
         const response = await fetch(endpoint, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        if (!response.ok) {
+        if (response && !response.ok) {
           throw new Error(`Error: ${response.status}`);
         }
         const data = await response.json(); //from server
@@ -85,9 +89,8 @@ const AgendaListView = () => {
             }
             return item;
           });
-          setAgendaItems(withImages);
+          setAgendaItems([...withImages]);
         }
-
         setError(null);
       } catch (err) {
         //setError("Failed to fetch agenda items. Please try again later.");
@@ -98,6 +101,27 @@ const AgendaListView = () => {
     };
     fetchAgendaItems();
   }, [isAdmin, isReady, token]);
+
+  //
+  const fetchUserSubmissions = async () => {
+    const response = await fetch("/api/protected/submissions", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await response.json();
+    // Populate item here
+    const userSubmissions = data
+      .map(({ id, email, formData, token }) => {
+        formData["email"] = email;
+        formData["id"] = id;
+        formData["userSubmission"] = true;
+        formData["token"] = token;
+        return { ...formData };
+      })
+      .filter((item: { email: string }) => item.email != "");
+    setAgendaItems([...agendaItems, ...userSubmissions]);
+  };
 
   useEffect(() => {
     let filteredItems = agendaItems.filter((item) => {
@@ -128,15 +152,40 @@ const AgendaListView = () => {
 
       return true;
     });
-    // apply filters
+    if (filter.userSubmitted == false) {
+      filteredItems = filteredItems.filter(
+        (item) => item.email == undefined || item.email == ""
+      );
+    } else {
+      filteredItems = filteredItems.filter(
+        (item) => item.email && item.email != ""
+      );
+    }
+
     setFilteredItems(filteredItems);
   }, [filter, agendaItems]);
 
+  // watch user submitted Filter
+  useEffect(() => {
+    if (userSubmissionIsLoaded) {
+      return;
+    }
+    if (filter.userSubmitted == true) {
+      fetchUserSubmissions();
+      setUserSubmissionIsLoaded(true);
+    }
+  }, [userSubmissionIsLoaded, filter]);
+
   // Handle filter changes
   const handleFilterChange = (
-    e: React.ChangeEvent<HTMLElement & { name: string; value: string }>
+    e: React.ChangeEvent<
+      HTMLElement & HTMLInputElement & { name: string; value: string | boolean }
+    >
   ) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+    if (name == "userSubmitted") {
+      value = e.target.checked as unknown as string;
+    }
     setFilter((prev) => ({
       ...prev,
       [name]: value,
@@ -160,6 +209,10 @@ const AgendaListView = () => {
       default:
         return "bg-blue-100 text-blue-800";
     }
+  };
+
+  const isFromUser = (item: AgendaItem): boolean => {
+    return item?.userSubmission as unknown as boolean;
   };
 
   const handleChangeStatus = async (itemId: string, status: Status) => {
@@ -287,6 +340,24 @@ const AgendaListView = () => {
               </select>
             </div>
           )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Entrées utilisateur
+            </label>
+            <div className="flex items-center space-x-2 p-2">
+              <input
+                type="checkbox"
+                id="userSubmitted"
+                name="userSubmitted"
+                checked={filter.userSubmitted}
+                onChange={handleFilterChange}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="userSubmitted" className="text-sm text-gray-700">
+                Voir les entrées soumises par les utilisateurs
+              </label>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -489,13 +560,22 @@ const AgendaListView = () => {
                             Voir détails
                           </Link>
 
-                          {isAdmin && (
+                          {isAdmin && !isFromUser(item) && (
                             <Link
                               to={`/agenda/${item.id}/edit`}
                               state={{ agendaItem: item }}
                               className="text-gray-600 hover:text-gray-800 text-sm"
                             >
                               Éditer
+                            </Link>
+                          )}
+                          {isFromUser(item) && (
+                            <Link
+                              to={`/agenda/public/${item.token}/edit`}
+                              state={{ agendaItem: item }}
+                              className="text-gray-600 hover:text-gray-800 text-sm"
+                            >
+                              Valider
                             </Link>
                           )}
                         </div>

@@ -15,7 +15,7 @@ type AgendaEntry struct {
 	Link                 string
 	Price                sql.NullFloat64
 	Address              string
-	Time                 string
+	Startdate            string
 	Description          string
 	Infos                sql.NullString
 	Poster               sql.NullString
@@ -25,8 +25,23 @@ type AgendaEntry struct {
 	Status               interface{}
 	Starttime            interface{}
 	Endtime              interface{}
+	Subtitle             interface{}
+	Enddate              interface{}
+	Venuename            interface{}
 	EventLifecycleStatus interface{}
 	EventOwner           int64
+}
+
+type FormSubmission struct {
+	ID          string
+	Email       string
+	Data        string
+	EditToken   string
+	CancelToken string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	Status      string
+	ExpiredAt   time.Time
 }
 
 type RefreshToken struct {
