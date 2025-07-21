@@ -33,6 +33,10 @@ type VisitorFormRequest struct {
 	Token    string         `json:"token"`
 }
 
+type SubmissionConfirmationRequest struct {
+	Token string
+}
+
 func (vr *VisitorFormRequest) isValid(validator *z.StructSchema) (bool, z.ZogIssueMap) {
 	issues := validator.Validate(vr)
 	if issues != nil {
@@ -55,29 +59,31 @@ func (f *FormSubmissionWrapper) NewFromRequest(formRequest VisitorFormRequest) *
 		log.Fatalf("error %v", err)
 	}
 	return &gendb.FormSubmission{
-		ID:          uuid.New().String(),
-		Email:       "",
-		Data:        jsonString,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-		EditToken:   generateToken(),
-		CancelToken: generateToken(),
-		ExpiredAt:   time.Now().Add(7 * 24 * time.Hour), // / 7 jours
-		Status:      "pending",
+		ID:                uuid.New().String(),
+		Email:             "",
+		Data:              jsonString,
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
+		EditToken:         generateToken(),
+		CancelToken:       generateToken(),
+		ConfirmationToken: generateToken(),
+		ExpiredAt:         time.Now().Add(7 * 24 * time.Hour), // / 7 jours
+		Status:            "pending",
 	}
 }
 
 func createFormParameters(formSubmission gendb.FormSubmission) *gendb.CreateFormSubmissionParams {
 	return &gendb.CreateFormSubmissionParams{
-		ID:          formSubmission.ID,
-		Email:       formSubmission.Email,
-		Data:        formSubmission.Data,
-		CreatedAt:   formSubmission.CreatedAt,
-		UpdatedAt:   formSubmission.UpdatedAt,
-		EditToken:   formSubmission.EditToken,
-		CancelToken: formSubmission.CancelToken,
-		ExpiredAt:   formSubmission.ExpiredAt,
-		Status:      formSubmission.Status,
+		ID:                formSubmission.ID,
+		Email:             formSubmission.Email,
+		Data:              formSubmission.Data,
+		CreatedAt:         formSubmission.CreatedAt,
+		UpdatedAt:         formSubmission.UpdatedAt,
+		EditToken:         formSubmission.EditToken,
+		CancelToken:       formSubmission.CancelToken,
+		ExpiredAt:         formSubmission.ExpiredAt,
+		Status:            formSubmission.Status,
+		ConfirmationToken: formSubmission.ConfirmationToken,
 	}
 }
 
@@ -107,7 +113,7 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 
 		// CSRF check
 		csrfToken := req.Header.Get("X-CSRF-Token")
-		fmt.Println(" CSRF Token:", csrfToken)
+		fmt.Println("CSRF Token:", csrfToken)
 		tokenStore := utils.GetCRSFTokenStore()
 		if !tokenStore.ValidateToken(csrfToken) {
 			createErrorResponse(writer, "Invalid CRSF token", http.StatusForbidden)
@@ -116,38 +122,13 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 
 		switch req.Method {
 		case http.MethodPost, http.MethodPut:
-			//prevent time format error
-			var rowData Record
+			// prevent time format error
+			//var rowData Record
 			var visitorRequest VisitorFormRequest
 
-			err := json.NewDecoder(req.Body).Decode(&rowData)
+			err := json.NewDecoder(req.Body).Decode(&visitorRequest)
 			if err != nil {
 				createErrorResponse(writer, "Failed to read body", http.StatusBadRequest)
-				return
-			}
-			agendaMap := Record{
-				"formData": rowData["formData"],
-			}
-			formData, err := json.Marshal(agendaMap)
-			if err != nil {
-				createErrorResponse(writer, "Failed to read agenda entry", http.StatusBadRequest)
-				return
-			}
-			entry, err := db.UnmarshalAgendaEntry(formData) // useful for time format
-			if err != nil {
-				fmt.Printf("err %v", err)
-				createErrorResponse(writer, "Failed to parse agenda entry", http.StatusBadRequest)
-				return
-			}
-			// We update the entry
-			rowData["formData"] = *entry
-
-			// Convert to json
-			rawRequestJson, err := json.Marshal(rowData)
-			json.Unmarshal(rawRequestJson, &visitorRequest)
-			if err != nil {
-				fmt.Printf("err %v", err)
-				createErrorResponse(writer, "Failed to parse agenda entry", http.StatusBadRequest)
 				return
 			}
 
@@ -155,6 +136,12 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 			if issues != nil {
 				log.Printf("visitorRequest issues %v", issues)
 				createErrorResponse(writer, "Invalid request", http.StatusUnprocessableEntity)
+				return
+			}
+			// validate agenda entry
+			err = visitorRequest.FormData.Validate()
+			if err != nil {
+				createErrorResponse(writer, "Invalid Agenda Form", http.StatusUnprocessableEntity)
 				return
 			}
 			// if update email should not changed
@@ -183,11 +170,10 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 			// create or update Submission
 			var submissionParams = createFormParameters(*submissionData)
 			dataJson, err := json.Marshal(visitorRequest.FormData)
-
 			//
 			if visitorRequest.Token != "" {
 				err = services.queries.UpdateSubmissionStatus(req.Context(), gendb.UpdateSubmissionStatusParams{
-					Status:    "pending",
+					Status:    "unconfirmed",
 					Data:      string(dataJson),
 					EditToken: visitorRequest.Token,
 				})
@@ -201,9 +187,14 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 			}
 
 			// send mail service
-			err = services.mailer.SendConfirmationMail(submissionData)
+			//err = services.mailer.SendConfirmationMail(submissionData)
+			err = services.mailer.SendMail("confirmation_email", submissionData.Email, "Afromémo - Confirmation de votre email", utils.Record{
+				"Email":           submissionData.Email,
+				"ConfirmationURL": fmt.Sprintf("%s/submission/%s/confirmation", os.Getenv("FRONT_URL"), submissionData.ConfirmationToken),
+			})
 			if err != nil {
-				log.Printf("Error while sending the file: %v:", err)
+				log.Printf("Error while sending the email: %v:", err)
+				createErrorResponse(writer, "Error while Sending mail to user", http.StatusInternalServerError)
 				return
 			}
 			// send response
@@ -249,6 +240,72 @@ func getAllSubmissions(service *ServiceMiddleWare, writer http.ResponseWriter, r
 
 func deleteSubmission(services *ServiceMiddleWare, response http.ResponseWriter, req *http.Request) {
 	// >> by admin
+}
+func ConfirmSubmission(services *ServiceMiddleWare) func(http.ResponseWriter, *http.Request) {
+	return func(writer http.ResponseWriter, req *http.Request) {
+		var request SubmissionConfirmationRequest
+
+		if req.Method != http.MethodPost {
+			writeJSONResponse(writer, http.StatusMethodNotAllowed, ErrorResponse{
+				Message: "Wrong Method",
+			})
+			return
+		}
+		err := json.NewDecoder(req.Body).Decode(&request)
+		if err != nil {
+			writeJSONResponse(writer, http.StatusBadRequest, ErrorResponse{
+				Message: err.Error(),
+			})
+			return
+		}
+		submission, err := services.queries.GetSubmissionByToken(req.Context(), gendb.GetSubmissionByTokenParams{
+			ConfirmationToken: request.Token,
+		})
+		if err != nil {
+			writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
+				Message: err.Error(),
+			})
+			return
+		}
+		fmt.Println("Status %s", submission.Status)
+		if submission.Status != "unconfirmed" {
+			writeJSONResponse(writer, http.StatusOK, OkResponse{
+				Message: "Already confirmed",
+			})
+			return
+		}
+		// validate confirmation token
+		if time.Now().After(submission.CreatedAt.Add(24 * time.Hour)) {
+			writeJSONResponse(writer, http.StatusUnauthorized, ErrorResponse{
+				Message: "Validation Token expired",
+			})
+			return
+		}
+
+		// Update submission state // send action email
+		_ = services.queries.UpdateSubmissionStatus(req.Context(), gendb.UpdateSubmissionStatusParams{
+			Status:    "pending",
+			Data:      submission.Data,
+			EditToken: submission.EditToken,
+		})
+		// send action mail
+		frontUrl := os.Getenv("FRONT_URL")
+		err = services.mailer.SendMail("actions_email", submission.Email, "Afromémo - Gérer votre événement", utils.Record{
+			"EditURL":   fmt.Sprintf("%s/edit?token=%s", frontUrl, submission.EditToken),
+			"CancelURL": fmt.Sprint("%s/cancel?token=%s", frontUrl, submission.CancelToken),
+			"CreatedAt": submission.CreatedAt,
+		})
+		if err != nil {
+			writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
+				Message: "Error while sending email",
+			})
+			return
+		}
+		writeJSONResponse(writer, http.StatusOK, ErrorResponse{
+			Message: "Ok",
+		})
+
+	}
 }
 
 func SubmissionHandler(services *ServiceMiddleWare) func(http.ResponseWriter, *http.Request) {

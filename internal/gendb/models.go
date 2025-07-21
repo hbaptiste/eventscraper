@@ -33,15 +33,16 @@ type AgendaEntry struct {
 }
 
 type FormSubmission struct {
-	ID          string
-	Email       string
-	Data        string
-	EditToken   string
-	CancelToken string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Status      string
-	ExpiredAt   time.Time
+	ID                string
+	Email             string
+	Data              string
+	EditToken         string
+	CancelToken       string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	Status            string
+	ExpiredAt         time.Time
+	ConfirmationToken string
 }
 
 type RefreshToken struct {

@@ -1,11 +1,11 @@
 -- name: CreateFormSubmission :exec
-INSERT INTO form_submissions (id, email, data, edit_token, cancel_token, created_at, updated_at, expired_at, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO form_submissions (id, email, data, edit_token, cancel_token, confirmation_token, created_at, updated_at, expired_at, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- name: GetSubmissionByToken :one
-SELECT id, email, data, edit_token, cancel_token, created_at, updated_at, expired_at, status
+SELECT id, email, data, edit_token, cancel_token, confirmation_token, created_at, updated_at, expired_at, status
     FROM form_submissions 
-    WHERE (edit_token = ? OR cancel_token = ?);
+    WHERE (edit_token = ? OR cancel_token = ? OR confirmation_token = ?);
 
 -- name: GetSubmissions :many
 SELECT * 

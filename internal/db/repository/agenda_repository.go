@@ -99,7 +99,7 @@ func (repo *AgendaRepository) FindAll(ctx context.Context, filter Filter) ([]db.
 				enddate,
 				venuename
 			FROM agenda_entry
-			WHERE startdate >= date('now', '-10 days')
+			WHERE enddate >= date('now', '-7 days')
 			`
 	// apply filter
 

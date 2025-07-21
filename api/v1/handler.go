@@ -919,6 +919,7 @@ func StartApiServer(portNumber int) {
 	// handle visitor submission
 	mux.HandleFunc("/api/submissions/", withCORS(SubmissionHandler(serviceMiddleWare)))
 	mux.HandleFunc("/api/submissions", withCORS(HandlerVisitorForm(serviceMiddleWare)))
+	mux.HandleFunc("/api/submissions/confirm", withCORS(ConfirmSubmission(serviceMiddleWare)))
 
 	// to remove
 	mux.HandleFunc("/api/upload", withCORS(uploadHandler))

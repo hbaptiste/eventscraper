@@ -243,14 +243,12 @@ const AgendaListView = () => {
   return (
     <div className="w-full container mx-auto mb-6">
       <div className="flex justify-end mb-6 mr-2">
-        {isAdmin && (
-          <Link
-            to="/agenda/create"
-            className="afromemo-btn bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            <Plus>Nouvel événement</Plus>
-          </Link>
-        )}
+        <Link
+          to={isAdmin ? "/agenda/create" : "/agenda/public/new"}
+          className="afromemo-btn bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          <Plus>Nouvel événement</Plus>
+        </Link>
       </div>
 
       {/* Filters */}

@@ -166,6 +166,48 @@ func (entry *AgendaEntry) UnmarshalJSON(data []byte) error {
 
 }
 
+func (entry *AgendaEntry) Validate() error {
+	var errorsList []string
+	if !entry.EndDate.IsZero() {
+		if entry.EndDate.Before(entry.StartDate) {
+			errorsList = append(errorsList, "end date must be after or equal to start date")
+		}
+	}
+
+	// Validate EndTime (considering EndDate)
+	if !entry.EndTime.IsZero() {
+		if entry.EndDate.IsZero() || entry.EndDate.Equal(entry.StartDate) {
+			// Same day event
+			if entry.EndTime.Before(entry.StartTime) {
+				errorsList = append(errorsList, "end time must be after or equal to start time")
+			}
+		} else {
+			// Multi-day event
+			fullStart := time.Date(
+				entry.StartDate.Year(), entry.StartDate.Month(), entry.StartDate.Day(),
+				entry.StartTime.Hour(), entry.StartTime.Minute(), entry.StartTime.Second(),
+				0, entry.StartDate.Location(),
+			)
+
+			fullEnd := time.Date(
+				entry.EndDate.Year(), entry.EndDate.Month(), entry.EndDate.Day(),
+				entry.EndTime.Hour(), entry.EndTime.Minute(), entry.EndTime.Second(),
+				0, entry.EndDate.Location(),
+			)
+
+			if fullEnd.Before(fullStart) {
+				errorsList = append(errorsList, "end date and time must be after start date and time")
+			}
+		}
+	}
+
+	if len(errorsList) > 0 {
+		return fmt.Errorf(strings.Join(errorsList, "; "))
+	}
+
+	return nil
+}
+
 func UnmarshalAgendaEntry(data []byte) (*AgendaEntry, error) {
 	// rawjson
 	var rawData map[string]interface{}

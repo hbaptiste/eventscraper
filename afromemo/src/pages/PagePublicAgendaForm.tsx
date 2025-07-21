@@ -37,36 +37,59 @@ const PagePublicAgendaForm: React.FC = (): React.ReactElement => {
   };
 
   const [formData, setFormData] = useState<AgendaItem | null>(null);
+  const [displayEmail, setDisplayEmail] = useState<boolean>(true);
   const [email, setEmail] = useState<string>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const { isAdmin, token } = useUserInfos();
+  const navigate = useNavigate();
 
-  useEffect(() => {}, [isAdmin, token]);
+  const getCRSToken = async () => {
+    const response = await fetch("/api/csrfToken", {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const { csrf_token } = await response.json();
+    return csrf_token;
+  };
 
   // >> handle [form] save
   const handleSave = async (formData: AgendaItem) => {
+    let request;
     const endpoint = isAdmin
       ? "/api/protected/agenda/admin"
       : "/api/submissions";
-    var request = {
-      formData: formData,
-      action: "publish",
-      token: tokenId, //submission token
-    };
-
+    if (isAdmin) {
+      request = {
+        formData: formData,
+        action: "publish",
+        token: tokenId, //submission token
+      };
+    } else {
+      // public form
+      request = {
+        formData: formData,
+        email: email,
+        token: tokenId,
+      };
+    }
     try {
       setIsLoading(true);
       const response = await fetch(endpoint, {
-        header: {
+        headers: {
+          "X-CSRF-Token": await getCRSToken(),
           authorization: `Bearer ${token}`,
         },
         method: "POST",
         body: JSON.stringify(request),
       });
+      console.log("<<<response>>>", response);
       if (response && !response.ok) {
         console.log("<response>", response);
+        return;
       }
+      navigate("/");
     } catch (e) {
       setIsLoading(false);
     } finally {
@@ -100,7 +123,7 @@ const PagePublicAgendaForm: React.FC = (): React.ReactElement => {
           <AgendaEntryForm
             onSave={handleSave}
             agendaItem={formData}
-            email={email}
+            displayEmail={displayEmail}
             isLoading={isLoading}
           />
         </>

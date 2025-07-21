@@ -9,7 +9,7 @@ import { fetch } from "../utils/main";
 interface AgendaEntryFormProp {
   agendaItem: AgendaItem;
   token?: string;
-  email?: string;
+  displayEmail: boolean;
   onSave: (formData: AgendaItem) => void;
   isLoading: boolean;
 }
@@ -17,13 +17,9 @@ interface AgendaEntryFormProp {
 const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   props: AgendaEntryFormProp
 ): React.ReactElement => {
-  const location = useLocation();
-  const { itemId } = useParams();
   const { isAdmin } = useUserInfos();
   const errorRef = useRef<HTMLDivElement>(null);
-  const [creatorEmail, setCreatorEmail] = useState<string | undefined>(
-    props.email
-  );
+  const [creatorEmail, setCreatorEmail] = useState<string | undefined>();
   const emptyAgendaItem: AgendaItem = {
     title: "",
     link: "",
@@ -44,6 +40,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
     venuename: "",
   };
 
+  console.log("<props>", props);
   const [formData, setFormData] = useState<AgendaItem>(
     props.agendaItem || emptyAgendaItem
   );
@@ -72,7 +69,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
       tags: Array.isArray(agendaItem.tags) ? [...agendaItem.tags] : [],
       poster: agendaItem.poster,
     };
-    console.log(">>><agenda<<", agendaItem);
+
     //setFormData(itemCopy);
 
     // Show conditional fields if they have values
@@ -149,10 +146,10 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   };
 
   const formateDatetime = (formData: AgendaItem) => {
-    formData.startdate = formatDateForbackend(formData.startdate);
+    /*formData.startdate = formatDateForbackend(formData.startdate);
     formData.enddate = formatDateForbackend(formData.enddate);
     formData.starttime = formatTimeForBackend(formData.starttime);
-    formData.endtime = formatTimeForBackend(formData.endtime);
+    formData.endtime = formatTimeForBackend(formData.endtime);*/
     return formData;
   };
   /** */
@@ -559,7 +556,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             <option value={Status.PENDING}>En suspens</option>
           </select>
         </div>
-        {props.email && (
+        {props.displayEmail && (
           <div className="mb-4">
             <label className="block text-gray-700 mb-2" htmlFor="status">
               Email

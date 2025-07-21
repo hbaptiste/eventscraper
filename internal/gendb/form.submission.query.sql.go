@@ -37,20 +37,21 @@ func (q *Queries) CleanupOldSubmission(ctx context.Context) error {
 }
 
 const createFormSubmission = `-- name: CreateFormSubmission :exec
-INSERT INTO form_submissions (id, email, data, edit_token, cancel_token, created_at, updated_at, expired_at, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO form_submissions (id, email, data, edit_token, cancel_token, confirmation_token, created_at, updated_at, expired_at, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type CreateFormSubmissionParams struct {
-	ID          string
-	Email       string
-	Data        string
-	EditToken   string
-	CancelToken string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	ExpiredAt   time.Time
-	Status      string
+	ID                string
+	Email             string
+	Data              string
+	EditToken         string
+	CancelToken       string
+	ConfirmationToken string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	ExpiredAt         time.Time
+	Status            string
 }
 
 func (q *Queries) CreateFormSubmission(ctx context.Context, arg CreateFormSubmissionParams) error {
@@ -60,6 +61,7 @@ func (q *Queries) CreateFormSubmission(ctx context.Context, arg CreateFormSubmis
 		arg.Data,
 		arg.EditToken,
 		arg.CancelToken,
+		arg.ConfirmationToken,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.ExpiredAt,
@@ -69,30 +71,32 @@ func (q *Queries) CreateFormSubmission(ctx context.Context, arg CreateFormSubmis
 }
 
 const getSubmissionByToken = `-- name: GetSubmissionByToken :one
-SELECT id, email, data, edit_token, cancel_token, created_at, updated_at, expired_at, status
+SELECT id, email, data, edit_token, cancel_token, confirmation_token, created_at, updated_at, expired_at, status
     FROM form_submissions 
-    WHERE (edit_token = ? OR cancel_token = ?)
+    WHERE (edit_token = ? OR cancel_token = ? OR confirmation_token = ?)
 `
 
 type GetSubmissionByTokenParams struct {
-	EditToken   string
-	CancelToken string
+	EditToken         string
+	CancelToken       string
+	ConfirmationToken string
 }
 
 type GetSubmissionByTokenRow struct {
-	ID          string
-	Email       string
-	Data        string
-	EditToken   string
-	CancelToken string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	ExpiredAt   time.Time
-	Status      string
+	ID                string
+	Email             string
+	Data              string
+	EditToken         string
+	CancelToken       string
+	ConfirmationToken string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	ExpiredAt         time.Time
+	Status            string
 }
 
 func (q *Queries) GetSubmissionByToken(ctx context.Context, arg GetSubmissionByTokenParams) (GetSubmissionByTokenRow, error) {
-	row := q.db.QueryRowContext(ctx, getSubmissionByToken, arg.EditToken, arg.CancelToken)
+	row := q.db.QueryRowContext(ctx, getSubmissionByToken, arg.EditToken, arg.CancelToken, arg.ConfirmationToken)
 	var i GetSubmissionByTokenRow
 	err := row.Scan(
 		&i.ID,
@@ -100,6 +104,7 @@ func (q *Queries) GetSubmissionByToken(ctx context.Context, arg GetSubmissionByT
 		&i.Data,
 		&i.EditToken,
 		&i.CancelToken,
+		&i.ConfirmationToken,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ExpiredAt,
@@ -109,7 +114,7 @@ func (q *Queries) GetSubmissionByToken(ctx context.Context, arg GetSubmissionByT
 }
 
 const getSubmissions = `-- name: GetSubmissions :many
-SELECT id, email, data, edit_token, cancel_token, created_at, updated_at, status, expired_at 
+SELECT id, email, data, edit_token, cancel_token, created_at, updated_at, status, expired_at, confirmation_token 
     FROM form_submissions
     WHERE status='pending' or status='active'
 `
@@ -133,6 +138,7 @@ func (q *Queries) GetSubmissions(ctx context.Context) ([]FormSubmission, error) 
 			&i.UpdatedAt,
 			&i.Status,
 			&i.ExpiredAt,
+			&i.ConfirmationToken,
 		); err != nil {
 			return nil, err
 		}

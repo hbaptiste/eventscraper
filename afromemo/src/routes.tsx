@@ -7,6 +7,7 @@ import React from "react";
 import MainLayout from "./layout/Main";
 import PageFormConfirmation from "./pages/PageFormConfirmation";
 import PageAgendaPublicForm from "./pages/PagePublicAgendaForm";
+import PageSubmissionConfirmation from "./pages/PageSubmissionConfirmation";
 
 const ProtectedForm = WithProtection(PageAgendaForm);
 
@@ -28,7 +29,7 @@ const Routes = [
       {
         name: "PublicAgendaForm",
         path: "agenda/public/new",
-        element: <PageAgendaForm />,
+        element: <PageAgendaPublicForm />,
       },
       {
         name: "PublicAgendaFormEdit",
@@ -54,6 +55,11 @@ const Routes = [
         name: "PageFakeDetail",
         path: "/newdetail",
         element: <PageAgendaItemDetailView />,
+      },
+      {
+        name: "AgendaForm",
+        path: "submission/:tokenId/confirmation",
+        element: <PageSubmissionConfirmation />,
       },
     ],
   },

@@ -161,7 +161,6 @@ func (m *Mailer) sendEmail(task EmailTask) error {
 }
 
 func (m *Mailer) SendConfirmationMail(submission *gendb.FormSubmission) error {
-	log.Println("Inside SendConfirmationMail...")
 	dir, _ := os.Getwd()
 	templatePath := filepath.Join(dir, "internal", "templates", "confirmation_email.html")
 	if _, err := os.Stat(templatePath); err != nil {
@@ -184,7 +183,7 @@ func (m *Mailer) SendConfirmationMail(submission *gendb.FormSubmission) error {
 	json.Unmarshal([]byte(submission.Data), &formData)
 
 	templateData := TemplateData{
-		ID:        "sdlvhasdcasdceasdcasc",
+		ID:        submission.ID,
 		EditURL:   editURL,
 		CancelURL: cancelURL,
 		CreatedAt: submission.CreatedAt,
@@ -210,4 +209,43 @@ func (m *Mailer) SendConfirmationMail(submission *gendb.FormSubmission) error {
 		log.Println("Email queue is full, dropping email")
 	}
 	return nil
+}
+
+type Record map[string]any
+
+func (m *Mailer) SendMail(templateName string, email string, subject string, templateData Record) error {
+	dir, _ := os.Getwd()
+	templatePath := filepath.Join(dir, "internal", "templates", fmt.Sprintf("%s.html", templateName))
+	if _, err := os.Stat(templatePath); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("Template doesn't exist...")
+		}
+	}
+
+	// parse the template
+	titleCaser := cases.Title(language.English)
+	tmpl, err := template.New(fmt.Sprintf("%s.html", templateName)).Funcs(template.FuncMap{"title": titleCaser.String}).ParseFiles(templatePath)
+	if err != nil {
+		return fmt.Errorf("Error parsing email template: %w", err)
+	}
+	// Deal with template
+	var body bytes.Buffer
+	err = tmpl.Execute(&body, templateData)
+	if err != nil {
+		log.Printf("Error executing email template for %s: %v", email, err)
+		return err
+	}
+	task := EmailTask{
+		To:      email,
+		Subject: subject,
+		Body:    body.String(),
+	}
+	select {
+	case m.emailQueue <- task:
+		log.Printf("Sending [%s] mail to...%s\n", templateName, email)
+	default:
+		log.Println("Email queue is full, dropping email")
+	}
+	return nil
+
 }
