@@ -12,7 +12,7 @@ export default function Footer() {
               </span>
             </h3>
           </div>
-          <div>contact at afromemo.ch</div>
+          <div>info at afromemo.ch</div>
         </div>
       </div>
     </footer>

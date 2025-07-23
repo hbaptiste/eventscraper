@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"dpatrov/scraper/internal/db"
+	"errors"
 	"fmt"
 	"log"
-	"reflect"
 	"strings"
 	"time"
 
@@ -23,6 +23,13 @@ func NewAgendaRepository(db *sql.DB) *AgendaRepository {
 
 type Filter = map[string]int
 
+var ErrNoAgendaEntryFound = errors.New("No Agenda found")
+
+var (
+	dateLayout = "2006-01-02"
+	timeLayout = "15:04"
+)
+
 // API
 func (repo *AgendaRepository) Create(ctx context.Context, entity *db.AgendaEntry) (*db.AgendaEntry, error) {
 	stm, err := repo.db.Prepare(`INSERT INTO agenda_entry
@@ -36,20 +43,17 @@ func (repo *AgendaRepository) Create(ctx context.Context, entity *db.AgendaEntry
 		log.Fatalf("AgendaRepository::Create STM error: %v", err)
 	}
 
-	vals := reflect.ValueOf(*entity)
-	fields := make([]any, 0, vals.NumField())
-
 	tagStrings := strings.Join(entity.Tags, ",")
-
-	fmt.Println(fields, tagStrings)
-	entity.ID = uuid.New().String()
+	if entity.ID == "" {
+		entity.ID = uuid.New().String()
+	}
 	_, err = stm.ExecContext(ctx,
 		entity.ID,
 		entity.Title,
 		entity.Link,
 		entity.Price,
 		entity.Address,
-		entity.StartDate,
+		entity.StartDate.Format(dateLayout),
 		entity.Description,
 		entity.Poster,
 		entity.Category,
@@ -58,10 +62,10 @@ func (repo *AgendaRepository) Create(ctx context.Context, entity *db.AgendaEntry
 		entity.Place,
 		entity.Status,
 		entity.EventLifecycleStatus,
-		entity.StartTime,
-		entity.EndTime,
+		entity.StartTime.Format(timeLayout),
+		entity.EndTime.Format(timeLayout),
 		entity.Subtitle,
-		entity.EndDate,
+		entity.EndDate.Format(dateLayout),
 		entity.VenueName,
 	)
 	if err != nil {
@@ -148,25 +152,29 @@ func (repo *AgendaRepository) FindAll(ctx context.Context, filter Filter) ([]db.
 			&endDateString,
 			&entry.VenueName,
 		)
+
 		if err != nil {
 			fmt.Printf("agenda_repository %v\n", err)
 			return nil, fmt.Errorf("Error while scanning agenda\n")
 		}
-		if startDate, err := time.Parse(time.RFC3339, startDateString); err == nil {
-			fmt.Printf("%v\n", err)
+		if startDate, err := time.Parse(dateLayout, startDateString); err == nil {
 			entry.StartDate = startDate
+		} else {
+			fmt.Printf("err%v", err)
 		}
 
-		if endDate, err := time.Parse(time.RFC3339, endDateString); err == nil {
+		if endDate, err := time.Parse(dateLayout, endDateString); err == nil {
 			entry.EndDate = endDate
 		}
-		if startTime, err := time.Parse(time.RFC3339, startDateString); err == nil {
-			fmt.Printf("%v\n", err)
+		if startTime, err := time.Parse(timeLayout, startTimeString); err == nil {
 			entry.StartTime = startTime
+		} else {
+			fmt.Printf("error %v, %s", startTime, startDateString)
 		}
-		if endTime, err := time.Parse(time.RFC3339, startDateString); err == nil {
-			fmt.Printf("%v\n", err)
+		if endTime, err := time.Parse(timeLayout, endTimeString); err == nil {
 			entry.EndTime = endTime
+		} else {
+			fmt.Printf("error %v", endTime)
 		}
 
 		if len(tagString) == 0 {
@@ -174,10 +182,100 @@ func (repo *AgendaRepository) FindAll(ctx context.Context, filter Filter) ([]db.
 		} else {
 			entry.Tags = strings.Split(tagString, ",")
 		}
+
 		entries = append(entries, entry)
 	}
 	return entries, nil
 
+}
+
+func (repo *AgendaRepository) rowToAgendaEntry(row *sql.Row, entry *db.AgendaEntry) (*db.AgendaEntry, error) {
+	var tagString string
+	var startDateString string
+	var startTimeString string
+	var endTimeString string
+	var endDateString string
+
+	err := row.Scan(
+		&entry.ID,
+		&entry.Title,
+		&entry.Link,
+		&entry.Price,
+		&entry.Address,
+		&startDateString,
+		&entry.Description,
+		&entry.Infos,
+		&entry.Poster,
+		&entry.Category,
+		&tagString,
+		&entry.Place,
+		&entry.Status,
+		&startTimeString,
+		&endTimeString,
+		&entry.EventLifecycleStatus,
+		&entry.Subtitle,
+		&endDateString,
+		&entry.VenueName,
+	)
+	if err != nil {
+		fmt.Printf("agenda_repository %v\n", err)
+		return nil, err
+	}
+	if startDate, err := time.Parse(dateLayout, startDateString); err == nil {
+		entry.StartDate = startDate
+	}
+
+	if endDate, err := time.Parse(dateLayout, endDateString); err == nil {
+		entry.EndDate = endDate
+	}
+	if startTime, err := time.Parse(timeLayout, startDateString); err == nil {
+		entry.StartTime = startTime
+	}
+	if endTime, err := time.Parse(timeLayout, startDateString); err == nil {
+		entry.EndTime = endTime
+	}
+
+	if len(tagString) == 0 {
+		entry.Tags = make([]string, 0)
+	} else {
+		entry.Tags = strings.Split(tagString, ",")
+	}
+	return entry, nil
+}
+
+func (repo *AgendaRepository) FindByID(ctx context.Context, id string) (db.AgendaEntry, error) {
+	var agenda_entry db.AgendaEntry
+	stm, err := repo.db.Prepare(`SELECT 
+					id, 
+					title, 
+					link, 
+					price, 
+					address, 
+					startdate, 
+					description, 
+					poster, 
+					category, 
+					tag, 
+					infos, 
+					place, 
+					status, 
+					event_lifecycle_status,
+					starttime, 
+					endtime, 
+					subtitle, 
+					enddate, 
+					venuename
+				FROM agenda_entry
+				WHERE
+					id=?`)
+	if err != nil {
+		fmt.Printf("agenda_repository:FindByID %v\n", err)
+		return agenda_entry, fmt.Errorf("Error while scanning agenda\n")
+	}
+	defer stm.Close()
+	row := stm.QueryRowContext(ctx, id)
+	_, err = repo.rowToAgendaEntry(row, &agenda_entry)
+	return agenda_entry, err
 }
 
 func (repo *AgendaRepository) Update(ctx context.Context, entry db.AgendaEntry) error {
@@ -257,4 +355,17 @@ func (repo *AgendaRepository) UpdateStatus(id string, status int) error {
 	return nil
 }
 
-func Delete() {}
+func (repo *AgendaRepository) Delete(ctx context.Context, id string) error {
+	query := `DELETE FROM agenda_entry WHERE id=?`
+	result, err := repo.db.Exec(query, id)
+	rowAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Printf("failed to check rows affected: %w", err)
+		return fmt.Errorf("failed to delete entry with id %s:", err)
+	}
+	if rowAffected == 0 {
+		log.Printf("Agenda entry with id %s not found", err)
+		return ErrNoAgendaEntryFound
+	}
+	return nil
+}

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import agendaFixture from "../data/agenda.fixtures";
 import useLocalStorage from "../hooks/useLocalStorage";
 import useAuthStore, { AuthInfos } from "../store/useAuthStore";
-import { AgendaItem, Places, Status } from "../types";
+import { AgendaItem, Places, Status, UserSubmission } from "../types";
 import { Plus } from "lucide-react";
 import { fetch, formatDateRange, getPlace } from "../utils/main";
 
@@ -112,7 +112,7 @@ const AgendaListView = () => {
     const data = await response.json();
     // Populate item here
     const userSubmissions = data
-      .map(({ id, email, formData, token }) => {
+      .map(({ id, email, formData, token }: UserSubmission) => {
         formData["email"] = email;
         formData["id"] = id;
         formData["userSubmission"] = true;
@@ -179,7 +179,9 @@ const AgendaListView = () => {
   // Handle filter changes
   const handleFilterChange = (
     e: React.ChangeEvent<
-      HTMLElement & HTMLInputElement & { name: string; value: string | boolean }
+      HTMLSelectElement &
+        HTMLElement &
+        HTMLInputElement & { name: string; value: string | boolean }
     >
   ) => {
     let { name, value } = e.target;
@@ -338,24 +340,30 @@ const AgendaListView = () => {
               </select>
             </div>
           )}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Entrées utilisateur
-            </label>
-            <div className="flex items-center space-x-2 p-2">
-              <input
-                type="checkbox"
-                id="userSubmitted"
-                name="userSubmitted"
-                checked={filter.userSubmitted}
-                onChange={handleFilterChange}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label htmlFor="userSubmitted" className="text-sm text-gray-700">
-                Voir les entrées soumises par les utilisateurs
+          {isAdmin && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Entrées utilisateur
               </label>
+              <div className="flex items-center space-x-2 p-2">
+                <input
+                  type="checkbox"
+                  id="userSubmitted"
+                  name="userSubmitted"
+                  checked={filter.userSubmitted}
+                  onChange={handleFilterChange}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                />
+
+                <label
+                  htmlFor="userSubmitted"
+                  className="text-sm text-gray-700"
+                >
+                  Voir les événement créés par les utilisateurs
+                </label>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

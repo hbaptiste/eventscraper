@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation, useParams } from "react-router-dom";
 import useUserInfos from "../hooks/useUserInfos";
 import useAuthStore from "../store/useAuthStore";
 
@@ -12,6 +11,7 @@ interface AgendaEntryFormProp {
   displayEmail: boolean;
   onSave: (formData: AgendaItem) => void;
   isLoading: boolean;
+  email?: string;
 }
 
 const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
@@ -19,7 +19,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
 ): React.ReactElement => {
   const { isAdmin } = useUserInfos();
   const errorRef = useRef<HTMLDivElement>(null);
-  const [creatorEmail, setCreatorEmail] = useState<string | undefined>();
+  const [creatorEmail, setCreatorEmail] = useState<string>(props.email || "");
   const emptyAgendaItem: AgendaItem = {
     title: "",
     link: "",
@@ -38,9 +38,9 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
     endtime: "",
     subtitle: "",
     venuename: "",
+    email: "",
   };
 
-  console.log("<props>", props);
   const [formData, setFormData] = useState<AgendaItem>(
     props.agendaItem || emptyAgendaItem
   );
@@ -55,7 +55,6 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   const BACKEND_IMAGE_URL = import.meta.env.VITE_BACKEND_IMAGE_PATH;
 
@@ -70,8 +69,6 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
       poster: agendaItem.poster,
     };
 
-    //setFormData(itemCopy);
-
     // Show conditional fields if they have values
     if (itemCopy.subtitle && itemCopy.subtitle.trim() !== "") {
       setShowSubtitle(true);
@@ -79,9 +76,11 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
     if (itemCopy.endtime && itemCopy.endtime.trim() !== "") {
       setShowEndDate(true);
     }
+    if (itemCopy.poster && itemCopy.poster.length) {
+      setPreview(`${BACKEND_IMAGE_URL}/${itemCopy.poster}`);
+    }
     // handle image preview
-    setPreview(`${BACKEND_IMAGE_URL}/${itemCopy.poster}`);
-  }, [formData]);
+  }, []); // only once
 
   // callback
   const handleChange = (
@@ -97,19 +96,29 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
         ...formData,
         [name]: parseInt(value),
       });
-    }
-    if (name == "tags") {
-      const tagsList = value.split(", ").map((tag) => tag.trim());
+    } else if (name == "tags") {
+      const tagsList = value.split(",").map((tag) => tag.trim());
       setFormData({
         ...formData,
         [name]: tagsList,
       });
+    } else if (name == "startdate" && formData["enddate"].trim().length == 0) {
+      setFormData({
+        ...formData,
+        ["startdate"]: value,
+        ["enddate"]: value,
+      });
+      setShowEndDate(true);
     } else {
       setFormData({
         ...formData,
         [name]: name === "price" ? parseInt(value, 10) : value,
       });
     }
+  };
+
+  const formatTags = (tags: string[] | string): string => {
+    return Array.isArray(tags) ? tags.join(", ") : tags;
   };
 
   // validate form
@@ -139,25 +148,14 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
       setMessage("Error: heure de début non renseignée");
       return;
     }
-    if (endtime.trim().length > 0 && endtime < starttime) {
-      setMessage("Error: heure de fin inférieure à heure de début");
+    if (
+      endtime.trim().length &&
+      starttime.trim().length &&
+      endtime.trim() == starttime.trim()
+    ) {
+      setMessage("Error: heure de début égale à heure de fin");
       return;
     }
-  };
-
-  const formateDatetime = (formData: AgendaItem) => {
-    /*formData.startdate = formatDateForbackend(formData.startdate);
-    formData.enddate = formatDateForbackend(formData.enddate);
-    formData.starttime = formatTimeForBackend(formData.starttime);
-    formData.endtime = formatTimeForBackend(formData.endtime);*/
-    return formData;
-  };
-  /** */
-  const formatUserSubmission = (formData: AgendaItem) => {
-    return {
-      formData: formateDatetime(formData),
-      email: creatorEmail,
-    };
   };
 
   const handleSubmit = async (e: any) => {
@@ -168,16 +166,12 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
     setLoading(true);
     const status = parseInt(formData.status.toString());
     formData.status = status;
-    const userInput = isAdmin ? formData : formatUserSubmission(formData);
-    props.onSave(formateDatetime(formData));
-  };
+    //handle email
+    if (creatorEmail) {
+      formData.email = creatorEmail;
+    }
 
-  const formatTimeForBackend = (time: string) => {
-    return "1970-01-01T" + time + ":00Z";
-  };
-
-  const formatDateForbackend = (date: string) => {
-    return date + "T00:00:00Z";
+    props.onSave(formData);
   };
 
   const handlePosterChange = async (
@@ -185,7 +179,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   ) => {
     const formData = new FormData();
     const file = event?.target?.files?.[0];
-    if (file == null) {
+    if (file == null || !file.type.startsWith("image/")) {
       return;
     }
     formData.append("file", file);
@@ -378,7 +372,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
         <div className="w-full flex justify-between mb-4 gap-4">
           <div className="flex-1">
             <label className="block text-gray-700 mb-2" htmlFor="time">
-              Date (YYYY-MM-DD)
+              Date (DD-MM-YYYY)
             </label>
             <input
               type="date"
@@ -401,7 +395,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             {showEndDate && (
               <div className="flex-1">
                 <label className="block text-gray-700 mb-2" htmlFor="endtime">
-                  Date de fin (YYYY-MM-DD)
+                  Date de fin (DD-MM-YYYY)
                 </label>
                 <input
                   type="date"
@@ -491,6 +485,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
                 className="max-h-48 object-contain mx-auto"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
+                  console.log(e, target.src);
                   target.onerror = null;
                   target.src = "/placeholder.jpg";
                 }}
@@ -533,7 +528,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             id="tags"
             name="tags"
             className="w-full p-2 border rounded"
-            value={formData.tags.join(", ")}
+            value={formatTags(formData.tags)}
             onChange={handleChange}
             placeholder="tag1, tag2, tag3"
           />

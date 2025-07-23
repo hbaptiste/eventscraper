@@ -45,6 +45,8 @@ export enum Categories {
 }
 
 export interface UserSubmission {
-  submission: AgendaItem;
+  formData: AgendaItem;
   email: string;
+  token: string;
+  id: string;
 }

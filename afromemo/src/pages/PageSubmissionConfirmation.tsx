@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 const PageSubmissionConfirmation = () => {
   const { tokenId } = useParams();
@@ -26,11 +26,23 @@ const PageSubmissionConfirmation = () => {
 
   return (
     <div className="w-full mx-auto p-6 bg-white mb-5 rounded shadow">
-      <h2>Confirmation de votre email</h2>
+      <h2 className="text-2xl font-bold mb-6">Validation de votre email</h2>
       {isLoading && <p>Loading...</p>}
-      {isOk && !isLoading && <p>Votre email a bien été activé.</p>}
+      {isOk && !isLoading && (
+        <div>
+          <p>Votre email a bien été validé.</p>
+          <p>
+            Suivez les intructions que vous allez recevoir par mail pour éditer
+            ou supprimer votre événement.
+          </p>
+          <p className="">
+            Une fois validé, il sera visible très rapidement sur notre
+            plateforme.
+          </p>
+        </div>
+      )}
       {!isOk && !isLoading && (
-        <p>Une erreur s'est produite pendant la confirmation</p>
+        <p>Une erreur s'est produite pendant la validation de votre email.</p>
       )}
     </div>
   );

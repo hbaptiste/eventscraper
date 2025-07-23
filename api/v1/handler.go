@@ -815,7 +815,7 @@ func AdminActionHandler(service *ServiceMiddleWare) HandlerFunc {
 			}
 			// Deal with poster // if it has changed
 			handlePoster(&agendaEntry)
-			// We keep the same ID && update status
+			// We keep the same ID submission && update status
 			agendaEntry.ID = formSubmission.ID
 			agendaEntry.Status = db.Status_Active
 
@@ -826,8 +826,10 @@ func AdminActionHandler(service *ServiceMiddleWare) HandlerFunc {
 				writeJSONResponse(writer, http.StatusUnprocessableEntity, ErrorResponse{Message: err.Error()})
 				return
 			}
-			// how to do transactions ?
 
+			// remove previous events linked to the submission ID
+			//err := service.agendaRepository.Delete(req.Context(), formSubmission.ID)
+			//if err!=nil && err!=
 			_, err = service.agendaRepository.Create(req.Context(), &agendaEntry)
 			if err != nil {
 				fmt.Printf("error::createAgendaEntry %v", err)

@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	internal "dpatrov/scraper/internal"
 	"dpatrov/scraper/internal/db"
+	"dpatrov/scraper/internal/db/repository"
 	gendb "dpatrov/scraper/internal/gendb"
 	"dpatrov/scraper/internal/utils"
 	"dpatrov/scraper/internal/validators"
@@ -88,6 +89,7 @@ func createFormParameters(formSubmission gendb.FormSubmission) *gendb.CreateForm
 }
 
 func createErrorResponse(writer http.ResponseWriter, msg string, status int) {
+	writer.WriteHeader(status)
 	json.NewEncoder(writer).Encode(Record{
 		"Error":   true,
 		"Message": msg,
@@ -128,10 +130,11 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 
 			err := json.NewDecoder(req.Body).Decode(&visitorRequest)
 			if err != nil {
+				fmt.Printf("<error> %v", err)
 				createErrorResponse(writer, "Failed to read body", http.StatusBadRequest)
 				return
 			}
-
+			fmt.Printf("%+v", visitorRequest)
 			_, issues := visitorRequest.isValid(validators.FormSubmissionSchema)
 			if issues != nil {
 				log.Printf("visitorRequest issues %v", issues)
@@ -170,37 +173,58 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 			// create or update Submission
 			var submissionParams = createFormParameters(*submissionData)
 			dataJson, err := json.Marshal(visitorRequest.FormData)
-			//
-			if visitorRequest.Token != "" {
+			fmt.Printf("json:%+v", string(dataJson))
+			// edit mode
+			if visitorRequest.Token != "" { // edit
 				err = services.queries.UpdateSubmissionStatus(req.Context(), gendb.UpdateSubmissionStatusParams{
-					Status:    "unconfirmed",
+					Status:    "pending",
 					Data:      string(dataJson),
 					EditToken: visitorRequest.Token,
 				})
-			} else {
+				// Remove the previous agenda entry if it exists
+				err := services.agendaRepository.Delete(req.Context(), visitorRequest.ID)
+				if err != nil && err != repository.ErrNoAgendaEntryFound {
+					createErrorResponse(writer, "Error while removing linked agenda entry", http.StatusInternalServerError)
+					return
+				}
+				/*agendaEntry, err := services.agendaRepository.FindByID(req.Context(), visitorRequest.ID)
+				if err != nil && err != sql.ErrNoRows {
+					createErrorResponse(writer, "Error while Updating linked agenda entry", http.StatusInternalServerError)
+					return
+				} else if agendaEntry.ID != "" {
+
+					// linked agenda exists, put it offline
+					err := services.agendaRepository.UpdateStatus(agendaEntry.ID, int(db.Status_Pending))
+					if err != nil {
+						fmt.Printf("<error>%v", err)
+						createErrorResponse(writer, "Error while Updating linked agenda entry", http.StatusInternalServerError)
+						return
+					}
+				}*/
+
+			} else { // new
+				submissionParams.Status = "unconfirmed"
 				err = services.queries.CreateFormSubmission(req.Context(), *submissionParams)
-			}
-			if err != nil {
-				log.Printf("Error while Saving form %v", err)
-				createErrorResponse(writer, "Error while Saving the form", http.StatusInternalServerError)
-				return
+				if err != nil {
+					log.Printf("Error while Saving form %v", err)
+					createErrorResponse(writer, "Error while Saving the form", http.StatusInternalServerError)
+					return
+				}
+				err = services.mailer.SendMail("confirmation_email", submissionData.Email, "Afromémo - Confirmation de votre email", utils.Record{
+					"Email":           submissionData.Email,
+					"ConfirmationURL": fmt.Sprintf("%s/submission/%s/confirmation", os.Getenv("FRONT_URL"), submissionData.ConfirmationToken),
+				})
+				if err != nil {
+					log.Printf("Error while sending the email: %v:", err)
+					createErrorResponse(writer, "Error while Sending mail to user", http.StatusInternalServerError)
+					return
+				}
 			}
 
-			// send mail service
-			//err = services.mailer.SendConfirmationMail(submissionData)
-			err = services.mailer.SendMail("confirmation_email", submissionData.Email, "Afromémo - Confirmation de votre email", utils.Record{
-				"Email":           submissionData.Email,
-				"ConfirmationURL": fmt.Sprintf("%s/submission/%s/confirmation", os.Getenv("FRONT_URL"), submissionData.ConfirmationToken),
-			})
-			if err != nil {
-				log.Printf("Error while sending the email: %v:", err)
-				createErrorResponse(writer, "Error while Sending mail to user", http.StatusInternalServerError)
-				return
-			}
 			// send response
 			writer.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(writer).Encode(Record{
-				"Success": true,
+				"success": true,
 			})
 			return
 		default:
@@ -291,8 +315,8 @@ func ConfirmSubmission(services *ServiceMiddleWare) func(http.ResponseWriter, *h
 		// send action mail
 		frontUrl := os.Getenv("FRONT_URL")
 		err = services.mailer.SendMail("actions_email", submission.Email, "Afromémo - Gérer votre événement", utils.Record{
-			"EditURL":   fmt.Sprintf("%s/edit?token=%s", frontUrl, submission.EditToken),
-			"CancelURL": fmt.Sprint("%s/cancel?token=%s", frontUrl, submission.CancelToken),
+			"EditURL":   fmt.Sprintf("%s/agenda/public/%s/edit", frontUrl, submission.EditToken),
+			"CancelURL": fmt.Sprintf("%s/agenda/public/%s/cancel", frontUrl, submission.CancelToken),
 			"CreatedAt": submission.CreatedAt,
 		})
 		if err != nil {

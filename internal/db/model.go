@@ -3,6 +3,7 @@ package db
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -164,6 +165,9 @@ func (entry *AgendaEntry) UnmarshalJSON(data []byte) error {
 
 	return nil
 
+}
+func (entry *AgendaEntry) IsZero() bool {
+	return reflect.ValueOf(entry).IsZero()
 }
 
 func (entry *AgendaEntry) Validate() error {
