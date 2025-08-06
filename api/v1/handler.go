@@ -624,7 +624,34 @@ func createAgendaEntry(req *http.Request, agendyEntry *db.AgendaEntry) (bool, er
 func agendaHandler(resp http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case http.MethodGet:
-		getAllEvents(resp, req)
+		urlPaths := strings.Split(req.URL.Path, "/")
+		if len(urlPaths) > 3 {
+			agendaID := urlPaths[3]
+			if agendaID != "" {
+				agendaRepo, err := GetRepository[repository.AgendaRepository](req.Context(), agendaRepoKey)
+				if err != nil {
+					http.Error(resp, "Fail to get agenda repository", http.StatusInternalServerError)
+				}
+				agendaEntry, err := agendaRepo.FindByID(req.Context(), agendaID)
+				if err != nil {
+					writeJSONResponse(resp, http.StatusInternalServerError, ErrorResponse{
+						Message: err.Error(),
+					})
+				}
+
+				dataJSON, err := agendaEntry.ToJSON()
+				if err != nil {
+					writeJSONResponse(resp, http.StatusInternalServerError, ErrorResponse{
+						Message: err.Error(),
+					})
+					return
+				}
+				resp.Write([]byte(dataJSON))
+			}
+		} else {
+			getAllEvents(resp, req)
+		}
+
 	case http.MethodPost:
 		var agendaEntry db.AgendaEntry
 		err := json.NewDecoder(req.Body).Decode(&agendaEntry)
@@ -647,7 +674,8 @@ func agendaHandler(resp http.ResponseWriter, req *http.Request) {
 	case http.MethodPut:
 		var agendaEntry db.AgendaEntry
 		err := json.NewDecoder(req.Body).Decode(&agendaEntry)
-		log.Printf("current entity Status: %d", agendaEntry.Status)
+		fmt.Printf("recieved data %+v", agendaEntry)
+
 		if err != nil {
 			log.Printf("error %v", err)
 			writeJSONResponse(resp, http.StatusUnprocessableEntity, ErrorResponse{
@@ -790,7 +818,7 @@ func AdminActionHandler(service *ServiceMiddleWare) HandlerFunc {
 		var actionRequest PublishActionRequest
 		err := json.NewDecoder(req.Body).Decode(&actionRequest)
 		if err != nil {
-			fmt.Printf("error:: %v", err)
+			fmt.Printf("AdminActionHandler::Error %v", err)
 			writeJSONResponse(writer, http.StatusUnprocessableEntity, ErrorResponse{Message: "Unprocessable entity"})
 			return
 		}
@@ -815,21 +843,17 @@ func AdminActionHandler(service *ServiceMiddleWare) HandlerFunc {
 			}
 			// Deal with poster // if it has changed
 			handlePoster(&agendaEntry)
-			// We keep the same ID submission && update status
+			// We keep the same submission ID && update status
 			agendaEntry.ID = formSubmission.ID
 			agendaEntry.Status = db.Status_Active
 
 			// We update submission status with the updated data
-			agendaEntryData, err := json.Marshal(actionRequest.FormData)
+			agendaEntryData, err := json.Marshal(agendaEntry)
 			if err != nil {
 				log.Printf("%v", err)
 				writeJSONResponse(writer, http.StatusUnprocessableEntity, ErrorResponse{Message: err.Error()})
 				return
 			}
-
-			// remove previous events linked to the submission ID
-			//err := service.agendaRepository.Delete(req.Context(), formSubmission.ID)
-			//if err!=nil && err!=
 			_, err = service.agendaRepository.Create(req.Context(), &agendaEntry)
 			if err != nil {
 				fmt.Printf("error::createAgendaEntry %v", err)
@@ -843,6 +867,16 @@ func AdminActionHandler(service *ServiceMiddleWare) HandlerFunc {
 				Data:      string(agendaEntryData),
 				EditToken: formSubmission.EditToken,
 			})
+
+			// notify user
+			frontUrl := os.Getenv("FRONT_URL")
+			err = service.mailer.SendMail("submission_accepted", formSubmission.Email, "Afromémo - Publication de votre événement", utils.Record{
+				"EditURL":    fmt.Sprintf("%s/agenda/public/%s/edit", frontUrl, formSubmission.EditToken),
+				"CancelURL":  fmt.Sprintf("%s/agenda/public/%s/cancel", frontUrl, formSubmission.CancelToken),
+				"DetailURL":  fmt.Sprintf("%s/agenda/%s", frontUrl, formSubmission.ID),
+				"EventTitle": agendaEntry.Title,
+			})
+
 			writeJSONResponse(writer, http.StatusOK, OkResponse{
 				Message: "ok",
 			})
@@ -907,7 +941,7 @@ func StartApiServer(portNumber int) {
 	// <mux>
 	mux := http.NewServeMux()
 	//
-
+	tmpImgServer := NewTmpFileServer("/tmp")
 	// auth routes
 	mux.HandleFunc("/api/login", loginHandler)
 	mux.HandleFunc("/api/health", healthHandler)
@@ -920,8 +954,9 @@ func StartApiServer(portNumber int) {
 
 	// handle visitor submission
 	mux.HandleFunc("/api/submissions/", withCORS(SubmissionHandler(serviceMiddleWare)))
-	mux.HandleFunc("/api/submissions", withCORS(HandlerVisitorForm(serviceMiddleWare)))
 	mux.HandleFunc("/api/submissions/confirm", withCORS(ConfirmSubmission(serviceMiddleWare)))
+	mux.HandleFunc("/api/submissions/delete", withCORS(SubmissionHandler(serviceMiddleWare)))
+	mux.HandleFunc("/api/submissions", withCORS(HandlerVisitorForm(serviceMiddleWare)))
 
 	// to remove
 	mux.HandleFunc("/api/upload", withCORS(uploadHandler))
@@ -933,6 +968,8 @@ func StartApiServer(portNumber int) {
 		fsStrippedHandler.ServeHTTP(resp, req)
 	})
 	mux.Handle("/images/", http.HandlerFunc(corsProtectedFs))
+	// handle /tmp/image
+	mux.HandleFunc("/images/tmp/", tmpImgServer.ServeHandler)
 
 	// handle protected routes
 	protectedRoutes := http.NewServeMux()

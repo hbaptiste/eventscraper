@@ -7,12 +7,12 @@ import { AgendaItem, Status } from "../types";
 import useUserInfos from "../hooks/useUserInfos";
 
 import { fetch } from "../utils/main";
-import useMessage from "../hooks/useMessage";
+import { useMessage } from "../hooks/useMessage";
 
 const PageAgendaEntryForm: React.FC = (): React.ReactElement => {
   const location = useLocation();
   const { token } = useUserInfos();
-  const { message, setMessage, messageRef } = useMessage();
+  const { setMessage } = useMessage();
   const navigate = useNavigate();
 
   const { itemId } = useParams();
@@ -20,7 +20,7 @@ const PageAgendaEntryForm: React.FC = (): React.ReactElement => {
   const emptyAgendaItem: AgendaItem = {
     title: "",
     link: "",
-    price: 0,
+    price: "Gratuit",
     address: "",
     startdate: "",
     enddate: "",
@@ -63,23 +63,12 @@ const PageAgendaEntryForm: React.FC = (): React.ReactElement => {
   return (
     <div className="_justify-center _max-w-2xl w-full mx-auto p-6 bg-white mb-5 rounded shadow">
       <h2 className="text-2xl font-bold mb-6">Créer un événement</h2>
-      {message && (
-        <div
-          ref={messageRef}
-          className={`p-4 mb-4 rounded ${
-            message.includes("Error")
-              ? "bg-red-100 text-red-700"
-              : "bg-green-100 text-green-700"
-          }`}
-        >
-          {message}
-        </div>
-      )}
       <AgendaEntryForm
         isLoading={false}
         displayEmail={false}
         onSave={handleSave}
         agendaItem={formData}
+        displayStatus={true}
       />
     </div>
   );

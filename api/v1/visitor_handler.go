@@ -32,9 +32,14 @@ type VisitorFormRequest struct {
 	FormData db.AgendaEntry `json:"formData"`
 	Email    string         `json:"email"`
 	Token    string         `json:"token"`
+	Status   string         `json:"status"`
 }
 
 type SubmissionConfirmationRequest struct {
+	Token string
+}
+
+type DeletionRequest struct {
 	Token string
 }
 
@@ -115,7 +120,6 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 
 		// CSRF check
 		csrfToken := req.Header.Get("X-CSRF-Token")
-		fmt.Println("CSRF Token:", csrfToken)
 		tokenStore := utils.GetCRSFTokenStore()
 		if !tokenStore.ValidateToken(csrfToken) {
 			createErrorResponse(writer, "Invalid CRSF token", http.StatusForbidden)
@@ -248,7 +252,7 @@ func getAllSubmissions(service *ServiceMiddleWare, writer http.ResponseWriter, r
 		var agenda db.AgendaEntry
 		err := json.Unmarshal([]byte(submission.Data), &agenda)
 		if err != nil {
-			fmt.Printf("getAllSubmissions:: %v", err)
+			fmt.Printf("getAllSubmissionsError:: %v", err)
 			continue
 		}
 
@@ -257,13 +261,50 @@ func getAllSubmissions(service *ServiceMiddleWare, writer http.ResponseWriter, r
 			Token:    submission.EditToken,
 			Email:    submission.Email,
 			FormData: agenda,
+			Status:   submission.Status,
 		})
 	}
 	json.NewEncoder(writer).Encode(response)
 }
 
-func deleteSubmission(services *ServiceMiddleWare, response http.ResponseWriter, req *http.Request) {
-	// >> by admin
+func deleteSubmission(services *ServiceMiddleWare, writer http.ResponseWriter, req *http.Request) {
+	var request DeletionRequest
+	json.NewDecoder(req.Body).Decode(&request)
+
+	if request.Token == "" {
+		writeJSONResponse(writer, http.StatusBadRequest, ErrorResponse{
+			Message: "Missing Token...",
+		})
+		return
+	}
+	submission, err := services.queries.GetSubmissionByToken(req.Context(), gendb.GetSubmissionByTokenParams{
+		CancelToken: request.Token,
+	})
+
+	if err != nil {
+		writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
+			Message: "Submission not found",
+		})
+		return
+	}
+	// update status
+	// Update submission state // send action email
+	_ = services.queries.UpdateSubmissionStatus(req.Context(), gendb.UpdateSubmissionStatusParams{
+		Status:    "deleted", // should be deleted later
+		Data:      submission.Data,
+		EditToken: submission.EditToken,
+	})
+	// deleted linked agenda
+	err = services.agendaRepository.Delete(req.Context(), submission.ID)
+	if err != nil && err != repository.ErrNoAgendaEntryFound {
+		createErrorResponse(writer, "Error while removing linked agenda entry", http.StatusInternalServerError)
+		return
+	}
+	writeJSONResponse(writer, http.StatusOK, OkResponse{
+		Message: fmt.Sprintf("Submission %s deleted", submission.ID),
+	})
+	fmt.Println("Linked agenda deleted...")
+
 }
 func ConfirmSubmission(services *ServiceMiddleWare) func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, req *http.Request) {
@@ -365,7 +406,7 @@ func SubmissionHandler(services *ServiceMiddleWare) func(http.ResponseWriter, *h
 				}
 			} else {
 				getAllSubmissions(services, writer, req)
-
+				return
 			}
 
 		case http.MethodPost:
@@ -409,6 +450,7 @@ func SubmissionHandler(services *ServiceMiddleWare) func(http.ResponseWriter, *h
 		case http.MethodDelete:
 			// Update Submission from delete_token
 			deleteSubmission(services, writer, req)
+			return
 		default:
 			createErrorResponse(writer, "token is missing", http.StatusBadRequest)
 			return

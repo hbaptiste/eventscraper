@@ -6,6 +6,7 @@ afromemo/.env.*
 config/*.env
 build/*
 *.db
+*.db.*
 uploads/*
 
 # Logs

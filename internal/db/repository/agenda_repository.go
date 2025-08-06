@@ -204,15 +204,17 @@ func (repo *AgendaRepository) rowToAgendaEntry(row *sql.Row, entry *db.AgendaEnt
 		&entry.Address,
 		&startDateString,
 		&entry.Description,
-		&entry.Infos,
 		&entry.Poster,
 		&entry.Category,
 		&tagString,
-		&entry.Place,
+		&entry.Infos,
 		&entry.Status,
-		&startTimeString,
-		&endTimeString,
+
 		&entry.EventLifecycleStatus,
+		&entry.Place,
+		&startTimeString,
+
+		&endTimeString,
 		&entry.Subtitle,
 		&endDateString,
 		&entry.VenueName,
@@ -245,6 +247,7 @@ func (repo *AgendaRepository) rowToAgendaEntry(row *sql.Row, entry *db.AgendaEnt
 
 func (repo *AgendaRepository) FindByID(ctx context.Context, id string) (db.AgendaEntry, error) {
 	var agenda_entry db.AgendaEntry
+
 	stm, err := repo.db.Prepare(`SELECT 
 					id, 
 					title, 
@@ -256,10 +259,10 @@ func (repo *AgendaRepository) FindByID(ctx context.Context, id string) (db.Agend
 					poster, 
 					category, 
 					tag, 
-					infos, 
-					place, 
+					infos,
 					status, 
 					event_lifecycle_status,
+					place, 
 					starttime, 
 					endtime, 
 					subtitle, 
@@ -313,19 +316,22 @@ func (repo *AgendaRepository) Update(ctx context.Context, entry db.AgendaEntry) 
 		entry.Link,
 		entry.Price,
 		entry.Address,
-		entry.StartDate,
+		entry.StartDate.Format(dateLayout),
+
 		entry.Description,
 		entry.Poster,
 		entry.Category,
 		entry.FormatTagsToString(),
+
 		entry.Infos,
 		entry.Status,
 		entry.EventLifecycleStatus,
+
 		entry.Place,
-		entry.StartTime,
-		entry.EndTime,
+		entry.StartTime.Format(timeLayout),
+		entry.EndTime.Format(timeLayout),
 		entry.Subtitle,
-		entry.EndDate,
+		entry.EndDate.Format(dateLayout),
 		entry.VenueName,
 		entry.ID)
 	if err != nil {

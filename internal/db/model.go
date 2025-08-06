@@ -71,7 +71,7 @@ type AgendaEntry struct {
 	ID                   string    `json:"id"`
 	Title                string    `json:"title"`
 	Link                 string    `json:"link"`
-	Price                int       `json:"price"`
+	Price                string    `json:"price"`
 	VenueName            string    `json:"venuename"`
 	Address              string    `json:"address"`
 	StartDate            time.Time `json:"startdate"`
@@ -108,10 +108,10 @@ func (entry AgendaEntry) MarshalJSON() ([]byte, error) {
 		EndTime   string `json:"endtime"`
 		*Alias
 	}{
-		StartDate: entry.StartDate.Format("2006-01-02"),
-		EndDate:   entry.EndDate.Format("2006-01-02"),
-		StartTime: entry.StartTime.Format("15:04"),
-		EndTime:   entry.EndTime.Format("15:04"),
+		StartDate: entry.StartDate.Format(dateLayout),
+		EndDate:   entry.EndDate.Format(dateLayout),
+		StartTime: entry.StartTime.Format(timeLayout),
+		EndTime:   entry.EndTime.Format(timeLayout),
 		Alias:     (*Alias)(&entry),
 	})
 }
@@ -130,8 +130,9 @@ func (entry *AgendaEntry) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+
 	if aux.StartDate != "" {
-		startDate, err := time.Parse("2006-01-02", aux.StartDate)
+		startDate, err := time.Parse(dateLayout, aux.StartDate)
 		if err != nil {
 			return fmt.Errorf("failed to parse startdate: %w", err)
 		}
@@ -139,7 +140,7 @@ func (entry *AgendaEntry) UnmarshalJSON(data []byte) error {
 	}
 
 	if aux.EndDate != "" {
-		endDate, err := time.Parse("2006-01-02", aux.EndDate)
+		endDate, err := time.Parse(dateLayout, aux.EndDate)
 		if err != nil {
 			return fmt.Errorf("failed to parse enddate: %w", err)
 		}
@@ -148,7 +149,7 @@ func (entry *AgendaEntry) UnmarshalJSON(data []byte) error {
 
 	// Parse times using time-only format
 	if aux.StartTime != "" {
-		startTime, err := time.Parse("15:04", aux.StartTime)
+		startTime, err := time.Parse(timeLayout, aux.StartTime)
 		if err != nil {
 			return fmt.Errorf("failed to parse starttime: %w", err)
 		}
@@ -156,7 +157,7 @@ func (entry *AgendaEntry) UnmarshalJSON(data []byte) error {
 	}
 
 	if aux.EndTime != "" {
-		endTime, err := time.Parse("15:04", aux.EndTime)
+		endTime, err := time.Parse(timeLayout, aux.EndTime)
 		if err != nil {
 			return fmt.Errorf("failed to parse endtime: %w", err)
 		}

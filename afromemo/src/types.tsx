@@ -10,7 +10,7 @@ export interface AgendaItem {
   id?: string | number;
   title: string;
   link: string;
-  price: number;
+  price: string;
   address: string;
   startdate: string;
   enddate: string;
@@ -49,4 +49,5 @@ export interface UserSubmission {
   email: string;
   token: string;
   id: string;
+  status: string;
 }

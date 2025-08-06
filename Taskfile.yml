@@ -20,12 +20,14 @@ vars:
   REMOTE_API_DIR: "{{.SERVER_HOME}}/api"
   REMOTE_REACT_DIR: "{{.SERVER_HOME}}/front"
   REMOTE_MIGRATION_DIR: "{{.REMOTE_API_DIR}}/internal/db/migrations"
+  REMOTE_TEPLATES_DIR: "{{.REMOTE_API_DIR}}/internal/templates"
   BACKUP_DIR: "{{.REMOTE_API_DIR}}/backup/"
 
-  # Server PORT
+  
   LOCAL_BUILD_PATH: "./build"
   LOCAL_FRONT_BUILD_PATH: "./afromemo/dist"
   MIGRATIONS_PATH: "./internal/db/migrations"
+  TEMPLATES_PATH: "./internal/templates"
   BACKEND_EXECUTABLE_NAME: api_server
   
   # PID
@@ -87,8 +89,14 @@ tasks:
       - echo "Transfering <env, db, conf> to SERVER_HOST"
       - scp -r {{.LOCAL_BUILD_PATH}}/* {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_API_DIR}}/
       - rsync -avz {{.LOCAL_FRONT_BUILD_PATH}}/* {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.SERVER_HOME}}/
+     
       # migration
-      - scp -r {{.MIGRATIONS_PATH}}/* {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_MIGRATION_DIR}}
+      - rsync -av --delete {{.MIGRATIONS_PATH}}/ {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_MIGRATION_DIR}}
+      
+      # templates
+      - rsync -av --delete {{.TEMPLATES_PATH}}/ {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_TEPLATES_DIR}}
+
+
       # db + htaccess
       - rsync -avz ./agenda.db {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_API_DIR}}/agenda.db
       - rsync -avz ./remote/.htaccess {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.SERVER_HOME}}/.htaccess
@@ -212,8 +220,13 @@ tasks:
     desc: Generate all repo
     cmds:
       - sqlc generate
+  
 
 
+  dev:apply-migration:
+    desc: Generate all repo
+    cmds:
+      - migrate -verbose -database "sqlite3://./agenda.db" -path ./internal/db/migrations up
 
   deploy:
     desc: Deploy to remote

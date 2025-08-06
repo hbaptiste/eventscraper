@@ -102,7 +102,11 @@ const AgendaListView = () => {
     fetchAgendaItems();
   }, [isAdmin, isReady, token]);
 
-  //
+  // test Message
+  useEffect(() => {
+    // setMessage("This is it", { delay: 3000 });
+  }, []);
+
   const fetchUserSubmissions = async () => {
     const response = await fetch("/api/protected/submissions", {
       headers: {
@@ -112,11 +116,13 @@ const AgendaListView = () => {
     const data = await response.json();
     // Populate item here
     const userSubmissions = data
-      .map(({ id, email, formData, token }: UserSubmission) => {
+      .map(({ id, email, formData, token, status }: UserSubmission) => {
         formData["email"] = email;
         formData["id"] = id;
         formData["userSubmission"] = true;
         formData["token"] = token;
+        formData["status"] =
+          status == "active" ? Status.ACTIVE : Status.PENDING;
         return { ...formData };
       })
       .filter((item: { email: string }) => item.email != "");
@@ -216,6 +222,9 @@ const AgendaListView = () => {
   const isFromUser = (item: AgendaItem): boolean => {
     return item?.userSubmission as unknown as boolean;
   };
+  const isPublished = (item: AgendaItem): boolean => {
+    return item.status == Status.ACTIVE;
+  };
 
   const handleChangeStatus = async (itemId: string, status: Status) => {
     // Optimistic update
@@ -247,9 +256,9 @@ const AgendaListView = () => {
       <div className="flex justify-end mb-6 mr-2">
         <Link
           to={isAdmin ? "/agenda/create" : "/agenda/public/new"}
-          className="afromemo-btn bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+          className="afromemo-btn flex justify-between bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
         >
-          <Plus>Nouvel événement</Plus>
+          <Plus></Plus> Créer un nouvel événement
         </Link>
       </div>
 
@@ -412,6 +421,7 @@ const AgendaListView = () => {
                           }}
                         />
                         {isAdmin &&
+                          !isFromUser(item) &&
                           hoveredItemId &&
                           hoveredItemId == (item.id as string) && (
                             <div className="absolute top-2 right-2 bg-white rounded-md shadow-lg p-1 z-10">
@@ -514,17 +524,17 @@ const AgendaListView = () => {
                           </div>
                         )}
 
-                        {item.price !== 0 && (
+                        {item.price.trim() !== "" && (
                           <div>
                             <span className="text-xs text-gray-500 uppercase tracking-wide">
                               Prix
                             </span>
                             <p className="text-sm text-gray-800 font-medium">
-                              CHF {item.price}
+                              {item.price}
                             </p>
                           </div>
                         )}
-                        {item.price == 0 && (
+                        {item.price.trim() == "" && (
                           <div>
                             <span className="text-xs text-gray-500 uppercase tracking-wide">
                               Prix
@@ -575,9 +585,9 @@ const AgendaListView = () => {
                               Éditer
                             </Link>
                           )}
-                          {isFromUser(item) && (
+                          {isFromUser(item) && !isPublished(item) && (
                             <Link
-                              to={`/agenda/public/${item.token}/edit`}
+                              to={`/agenda/public/${item.token}/validate`}
                               state={{ agendaItem: item }}
                               className="text-gray-600 hover:text-gray-800 text-sm"
                             >

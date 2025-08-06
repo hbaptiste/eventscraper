@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import useUserInfos from "../hooks/useUserInfos";
 import useAuthStore from "../store/useAuthStore";
 
 import { AgendaItem, Categories, Places, Status } from "../types";
@@ -9,6 +8,7 @@ interface AgendaEntryFormProp {
   agendaItem: AgendaItem;
   token?: string;
   displayEmail: boolean;
+  displayStatus?: boolean;
   onSave: (formData: AgendaItem) => void;
   isLoading: boolean;
   email?: string;
@@ -17,13 +17,12 @@ interface AgendaEntryFormProp {
 const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   props: AgendaEntryFormProp
 ): React.ReactElement => {
-  const { isAdmin } = useUserInfos();
   const errorRef = useRef<HTMLDivElement>(null);
   const [creatorEmail, setCreatorEmail] = useState<string>(props.email || "");
   const emptyAgendaItem: AgendaItem = {
     title: "",
     link: "",
-    price: 0,
+    price: "Gratuit",
     address: "",
     startdate: "",
     enddate: "",
@@ -102,17 +101,17 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
         ...formData,
         [name]: tagsList,
       });
-    } else if (name == "startdate" && formData["enddate"].trim().length == 0) {
+    } /*else if (name == "startdate" && formData["enddate"].trim().length == 0) {
       setFormData({
         ...formData,
         ["startdate"]: value,
         ["enddate"]: value,
       });
       setShowEndDate(true);
-    } else {
+    }*/ else {
       setFormData({
         ...formData,
-        [name]: name === "price" ? parseInt(value, 10) : value,
+        [name]: value,
       });
     }
   };
@@ -135,17 +134,28 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   const validateEventPeriod = () => {
     setMessage("");
     const { startdate, enddate, starttime, endtime } = formData;
+
     // save for starttime and endtime
     if (enddate.trim().length > 0 && startdate.trim().length == 0) {
       setMessage("Error: Date de début non renseignée");
       return;
     }
-    if (enddate && enddate < startdate) {
-      setMessage("Error: date de fin inférieure à date de début");
-      return;
+
+    if (enddate) {
+      if (enddate < startdate) {
+        setMessage("Error: Date de fin inférieure à date de début");
+        return;
+      }
+      const today = new Date().setHours(0, 0, 0, 0);
+      const toCheck = new Date(enddate).setHours(0, 0, 0, 0);
+      if (toCheck <= today) {
+        setMessage("Error: Date de fin doit être superieure à la date du jour");
+        return;
+      }
     }
+
     if (starttime.trim().length == 0 && endtime.trim().length > 0) {
-      setMessage("Error: heure de début non renseignée");
+      setMessage("Error: Heure de début non renseignée");
       return;
     }
     if (
@@ -153,7 +163,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
       starttime.trim().length &&
       endtime.trim() == starttime.trim()
     ) {
-      setMessage("Error: heure de début égale à heure de fin");
+      setMessage("Error: Heure de début égale à heure de fin");
       return;
     }
   };
@@ -166,11 +176,14 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
     setLoading(true);
     const status = parseInt(formData.status.toString());
     formData.status = status;
-    //handle email
+
     if (creatorEmail) {
       formData.email = creatorEmail;
     }
-
+    // Handle missing end date
+    if (formData["enddate"].trim().length == 0) {
+      formData["enddate"] = formData["startdate"];
+    }
     props.onSave(formData);
   };
 
@@ -301,8 +314,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             Prix
           </label>
           <input
-            type="number"
-            min="0"
+            type="text"
             id="price"
             name="price"
             className="w-full p-2 border rounded"
@@ -358,14 +370,12 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
               value={formData.place}
               onChange={handleChange}
             >
-              <>
-                <option value=""></option>
-                {placesMap.map(([key, value]) => {
-                  return (
-                    <option value={key}>{value as unknown as string}</option>
-                  );
-                })}
-              </>
+              <option value=""></option>
+              {placesMap.map(([key, value]) => {
+                return (
+                  <option value={key}>{value as unknown as string}</option>
+                );
+              })}
             </select>
           </div>
         </div>
@@ -533,24 +543,25 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             placeholder="tag1, tag2, tag3"
           />
         </div>
+        {props.displayStatus && (
+          <div className="mb-4">
+            <label className="block text-gray-700 mb-2" htmlFor="status">
+              Status
+            </label>
 
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-2" htmlFor="status">
-            Status
-          </label>
-          <select
-            id="status"
-            name="status"
-            className="w-full p-2 border rounded"
-            disabled={isAdmin == false && true}
-            value={formData.status}
-            onChange={handleChange}
-          >
-            <option value={Status.ACTIVE}>Actif</option>
-            <option value={Status.INACTIVE}>Inactif</option>
-            <option value={Status.PENDING}>En suspens</option>
-          </select>
-        </div>
+            <select
+              id="status"
+              name="status"
+              className="w-full p-2 border rounded"
+              value={formData.status}
+              onChange={handleChange}
+            >
+              <option value={Status.ACTIVE}>Actif</option>
+              <option value={Status.INACTIVE}>Inactif</option>
+              <option value={Status.PENDING}>En suspens</option>
+            </select>
+          </div>
+        )}
         {props.displayEmail && (
           <div className="mb-4">
             <label className="block text-gray-700 mb-2" htmlFor="status">

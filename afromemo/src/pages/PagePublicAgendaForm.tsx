@@ -1,17 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import AgendaEntryForm from "../components/AgendaForm";
+import { useMessage } from "../hooks/useMessage";
 import useUserInfos from "../hooks/useUserInfos";
 
 import { AgendaItem, Status, UserSubmission } from "../types";
 import { fetch } from "../utils/main";
 
-const PagePublicAgendaForm: React.FC = (): React.ReactElement => {
+type AgendaFormProps = {
+  forceUserContext?: boolean;
+};
+
+const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
+  props: AgendaFormProps
+): React.ReactElement => {
   const { tokenId } = useParams();
+  const { forceUserContext } = props;
   const emptyAgendaItem: AgendaItem = {
     title: "",
     link: "",
-    price: 0,
+    price: "Gratuit",
     address: "",
     startdate: "",
     enddate: "",
@@ -36,7 +44,12 @@ const PagePublicAgendaForm: React.FC = (): React.ReactElement => {
   const [displayConfirmation, setDisplayConfirmation] =
     useState<boolean>(false);
 
-  const { isAdmin, token } = useUserInfos();
+  const { isAdmin: actualIsAdmin, token } = useUserInfos();
+
+  const isAdmin = forceUserContext ? false : actualIsAdmin;
+
+  const navigate = useNavigate();
+  const { setMessage } = useMessage();
 
   const getCRSToken = async () => {
     const response = await fetch("/api/csrfToken", {
@@ -84,10 +97,18 @@ const PagePublicAgendaForm: React.FC = (): React.ReactElement => {
         console.log(error);
         return;
       } else {
-        setDisplayConfirmation(true);
+        if (isAdmin) {
+          navigate("/");
+          setMessage("L'évenement a bien été publié!");
+        } else {
+          setDisplayConfirmation(true);
+        }
       }
     } catch (e) {
       // deal with error
+      setMessage(
+        "Error: une erreur s'est produite! Merci de réessayer ultérieurement."
+      );
       setIsLoading(false);
     } finally {
       setIsLoading(false);
@@ -125,6 +146,7 @@ const PagePublicAgendaForm: React.FC = (): React.ReactElement => {
             onSave={handleSave}
             agendaItem={formData}
             displayEmail={displayEmail}
+            displayStatus={isAdmin ? true : false}
             isLoading={isLoading}
             email={email}
           />
@@ -139,7 +161,7 @@ const PagePublicAgendaForm: React.FC = (): React.ReactElement => {
               <p>Vous avez reçu un mail vous invitant à valider votre email.</p>
             </div>
           )}
-          {tokenId && (
+          {tokenId && !isAdmin && (
             <div>
               <p>L'événement a bien été modifié.</p>
               <p>
@@ -147,6 +169,7 @@ const PagePublicAgendaForm: React.FC = (): React.ReactElement => {
               </p>
             </div>
           )}
+
           <a href="/">Voir la liste des événements.</a>
         </div>
       )}
