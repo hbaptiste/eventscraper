@@ -19,7 +19,7 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
   const emptyAgendaItem: AgendaItem = {
     title: "",
     link: "",
-    price: "Gratuit",
+    price: "",
     address: "",
     startdate: "",
     enddate: "",
@@ -49,7 +49,7 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
   const isAdmin = forceUserContext ? false : actualIsAdmin;
 
   const navigate = useNavigate();
-  const { setMessage } = useMessage();
+  const { setMessage, showMessage } = useMessage();
 
   const getCRSToken = async () => {
     const response = await fetch("/api/csrfToken", {
@@ -93,8 +93,12 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
         body: JSON.stringify(request),
       });
       if (!response.ok) {
-        const error = await response.json();
-        console.log(error);
+        // const error = await response.json();
+        showMessage(
+          "Une erreur s'est produite! Merci de réessayer ultérieurement.",
+          { type: "error" }
+        );
+        setIsLoading(false);
         return;
       } else {
         if (isAdmin) {
@@ -158,7 +162,11 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
           {!tokenId && (
             <div>
               <p>L'événement a bien été créé.</p>
-              <p>Vous avez reçu un mail vous invitant à valider votre email.</p>
+              <p>
+                Vous avez reçu un email vous invitant à valider votre adresse
+                email.
+              </p>
+              <p>Pensez à regarder dans vos spams!</p>
             </div>
           )}
           {tokenId && !isAdmin && (

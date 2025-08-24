@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useMessage } from "../hooks/useMessage";
 import useAuthStore from "../store/useAuthStore";
 
 import { AgendaItem, Categories, Places, Status } from "../types";
@@ -17,12 +18,11 @@ interface AgendaEntryFormProp {
 const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   props: AgendaEntryFormProp
 ): React.ReactElement => {
-  const errorRef = useRef<HTMLDivElement>(null);
   const [creatorEmail, setCreatorEmail] = useState<string>(props.email || "");
   const emptyAgendaItem: AgendaItem = {
     title: "",
     link: "",
-    price: "Gratuit",
+    price: "",
     address: "",
     startdate: "",
     enddate: "",
@@ -51,11 +51,21 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   // auth
   const { token } = useAuthStore((state: any) => state);
 
+  // error
+  const [hasError, setHasError] = useState<boolean>(false);
+
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
+  const [isPristine, setPristine] = useState<boolean>(true);
+  const { showMessage } = useMessage();
 
   const BACKEND_IMAGE_URL = import.meta.env.VITE_BACKEND_IMAGE_PATH;
+
+  // set Message helper
+  const setErrorMessage = (message: string) => {
+    setHasError(true);
+    showMessage(message, { type: "error", delay: 5000 });
+  };
 
   useEffect(() => {
     if (!formData) {
@@ -123,56 +133,64 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   // validate form
   useEffect(() => {
     validateEventPeriod();
+    validatePoster();
+    // Validate poster
   }, [formData]);
 
-  useEffect(() => {
-    if (message.trim().length > 0 && errorRef.current) {
-      errorRef.current.scrollIntoView();
-    }
-  }, [message, errorRef]);
+  const validatePoster = (): boolean => {
+    return formData.poster.trim() == "" ? false : true;
+  };
 
-  const validateEventPeriod = () => {
-    setMessage("");
+  const validateEventPeriod = (): boolean => {
+    //setErrorMessage("");
     const { startdate, enddate, starttime, endtime } = formData;
 
     // save for starttime and endtime
     if (enddate.trim().length > 0 && startdate.trim().length == 0) {
-      setMessage("Error: Date de début non renseignée");
-      return;
+      setErrorMessage("Date de début non renseignée");
+      return false;
     }
 
     if (enddate) {
       if (enddate < startdate) {
-        setMessage("Error: Date de fin inférieure à date de début");
-        return;
+        setErrorMessage("Date de fin inférieure à date de début");
+        return false;
       }
       const today = new Date().setHours(0, 0, 0, 0);
       const toCheck = new Date(enddate).setHours(0, 0, 0, 0);
       if (toCheck <= today) {
-        setMessage("Error: Date de fin doit être superieure à la date du jour");
-        return;
+        setErrorMessage("Date de fin doit être supérieure à la date du jour");
+        return false;
       }
     }
 
     if (starttime.trim().length == 0 && endtime.trim().length > 0) {
-      setMessage("Error: Heure de début non renseignée");
-      return;
+      setErrorMessage("Heure de début non renseignée");
+      return false;
     }
     if (
       endtime.trim().length &&
       starttime.trim().length &&
       endtime.trim() == starttime.trim()
     ) {
-      setMessage("Error: Heure de début égale à heure de fin");
-      return;
+      setErrorMessage("Heure de début égale à heure de fin");
+      return false;
     }
+
+    return true;
   };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     e.stopPropagation();
-    if (message.includes("Error")) return;
-
+    let isValid = validateEventPeriod();
+    if (!isValid) {
+      return;
+    }
+    isValid = validatePoster();
+    if (!isValid) {
+      return;
+    }
     setLoading(true);
     const status = parseInt(formData.status.toString());
     formData.status = status;
@@ -234,6 +252,12 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
       setFormData({ ...formData, enddate: "" });
     }
   };
+  const clearValidity = (
+    e: React.FormEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const target = e.target as HTMLInputElement;
+    target.setCustomValidity("");
+  };
 
   /* categories */
   const categoriesMap = Object.entries(Categories);
@@ -243,18 +267,6 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   return (
     <div>
       <form onSubmit={handleSubmit}>
-        {message && (
-          <div
-            ref={errorRef}
-            className={`p-4 mb-4 rounded ${
-              message.includes("Error")
-                ? "bg-red-100 text-red-700"
-                : "bg-green-100 text-green-700"
-            }`}
-          >
-            {message}
-          </div>
-        )}
         <div className="mb-4">
           <label className="block text-gray-700 mb-2" htmlFor="title">
             Titre
@@ -267,6 +279,13 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             value={formData.title}
             onChange={handleChange}
             required
+            onInput={clearValidity}
+            onInvalid={(e) => {
+              const target = e.target as HTMLInputElement;
+              target.setCustomValidity(
+                "Vous devez fournir un titre pour l'événemement"
+              );
+            }}
           />
         </div>
         {/* Subtitle toggle button and field */}
@@ -318,6 +337,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             id="price"
             name="price"
             className="w-full p-2 border rounded"
+            placeholder="Ex: Tarif normal/Tarif réduit devise ou Pass 1 jour 30/35 - Pass 2 jours 45/40 "
             value={formData.price}
             onChange={handleChange}
           />
@@ -340,6 +360,13 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
               value={formData.venuename}
               onChange={handleChange}
               placeholder="Ex: École internationale de Genève"
+              onInput={clearValidity}
+              onInvalid={(e) => {
+                const target = e.target as HTMLInputElement;
+                target.setCustomValidity(
+                  "Vous devez fournir une adresse pour l'événement"
+                );
+              }}
             />
           </div>
 
@@ -353,8 +380,14 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
               name="address"
               className="w-full p-2 border rounded"
               value={formData.address}
+              onInput={clearValidity}
               onChange={handleChange}
+              required
               placeholder="Ex: Rte des Morillons 11, 1218 Le Grand-Saconnex"
+              onInvalid={(e) => {
+                const target = e.target as HTMLSelectElement;
+                target.setCustomValidity("Vous devez fournir une adresse");
+              }}
             />
           </div>
 
@@ -369,11 +402,18 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
               className="w-full p-2 border rounded"
               value={formData.place}
               onChange={handleChange}
+              onInput={clearValidity}
+              onInvalid={(e) => {
+                const target = e.target as HTMLSelectElement;
+                target.setCustomValidity("Vous devez choisir une région");
+              }}
             >
               <option value=""></option>
               {placesMap.map(([key, value]) => {
                 return (
-                  <option value={key}>{value as unknown as string}</option>
+                  <option key={key} value={key}>
+                    {value as unknown as string}
+                  </option>
                 );
               })}
             </select>
@@ -390,8 +430,15 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
               required
               name="startdate"
               className="w-full p-2 border rounded"
-              value={formData.startdate || ""}
-              onChange={handleChange}
+              defaultValue={formData.startdate || ""}
+              onBlur={handleChange}
+              onInput={clearValidity}
+              onInvalid={(e) => {
+                const target = e.target as HTMLSelectElement;
+                target.setCustomValidity(
+                  "Vous devez fournir une date de début"
+                );
+              }}
             />
           </div>
           <div className="flex gap-1">
@@ -412,8 +459,8 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
                   id="enddate"
                   name="enddate"
                   className="w-full p-2 border rounded"
-                  value={formData.enddate || ""}
-                  onChange={handleChange}
+                  defaultValue={formData.enddate || ""}
+                  onBlur={handleChange}
                 />
               </div>
             )}
@@ -430,8 +477,15 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
               name="starttime"
               required
               className="w-full p-2 border rounded"
-              value={formData.starttime || ""}
-              onChange={handleChange}
+              defaultValue={formData.starttime || ""}
+              onBlur={handleChange}
+              onInput={clearValidity}
+              onInvalid={(e) => {
+                const target = e.target as HTMLSelectElement;
+                target.setCustomValidity(
+                  "Vous devez fournir une heure de début"
+                );
+              }}
             />
           </div>
           <div className="flex-1">
@@ -443,8 +497,8 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
               id="endtime"
               name="endtime"
               className="w-full p-2 border rounded"
-              value={formData.endtime || ""}
-              onChange={handleChange}
+              defaultValue={formData.endtime || ""}
+              onBlur={handleChange}
             />
           </div>
         </div>
@@ -468,6 +522,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             id="infos"
             name="infos"
             className="w-full p-2 border rounded h-24"
+            placeholder="Utiliser ce champ pour indiquer toute information concernant les tarifs, les horaires, ou autre."
             value={formData.infos}
             onChange={handleChange}
           />
@@ -483,6 +538,14 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             name="poster"
             className="w-full p-2 border rounded"
             onChange={handlePosterChange}
+            required
+            onInput={clearValidity}
+            onInvalid={(e) => {
+              const target = e.target as HTMLInputElement;
+              target.setCustomValidity(
+                "Vous devez fournir un poster pour votre événement"
+              );
+            }}
           />
         </div>
         <div className="mt-2 mb-2">
@@ -495,7 +558,6 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
                 className="max-h-48 object-contain mx-auto"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  console.log(e, target.src);
                   target.onerror = null;
                   target.src = "/placeholder.jpg";
                 }}
@@ -518,6 +580,11 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             className="w-full p-2 border rounded"
             value={formData.category}
             onChange={handleChange}
+            onInput={clearValidity}
+            onInvalid={(e) => {
+              const target = e.target as HTMLSelectElement;
+              target.setCustomValidity("Vous devez choisir une catégorie");
+            }}
           >
             <option value=""></option>
             {categoriesMap.map(([key, value]) => {
@@ -570,10 +637,18 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             <input
               id="email"
               name="email"
+              type="email"
               className="w-full p-2 border rounded"
               required
               value={creatorEmail}
               onChange={(e) => setCreatorEmail(e.target.value)}
+              onInput={clearValidity}
+              onInvalid={(e) => {
+                const target = e.target as HTMLInputElement;
+                target.setCustomValidity(
+                  "Vous devez fournir une adresse email"
+                );
+              }}
             />
           </div>
         )}
@@ -582,7 +657,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
           disabled={loading}
           className="afromemo-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
         >
-          {props.isLoading ? "Creating..." : "Enregistrer"}
+          {props.isLoading ? "..." : "Enregistrer"}
         </button>
       </form>
     </div>

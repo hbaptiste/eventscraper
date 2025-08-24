@@ -20,7 +20,7 @@ const PageAgendaEntryForm: React.FC = (): React.ReactElement => {
   const emptyAgendaItem: AgendaItem = {
     title: "",
     link: "",
-    price: "Gratuit",
+    price: "",
     address: "",
     startdate: "",
     enddate: "",

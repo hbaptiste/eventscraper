@@ -176,8 +176,8 @@ export default function PageAgendaItemDetailView() {
               </h2>
               <div className={showFullDescription ? "" : "relative"}>
                 <p
-                  className={`text-gray-700 leading-relaxed ${
-                    !showFullDescription && "line-clamp-3"
+                  className={`text-gray-700 leading-relaxed whitespace-pre-line ${
+                    !showFullDescription && "line-clamp-3 "
                   }`}
                 >
                   {agendaItem.description}
@@ -207,7 +207,9 @@ export default function PageAgendaItemDetailView() {
                     size={20}
                     className="text-gray-500 flex-shrink-0 mt-1 mr-3"
                   />
-                  <p className="text-gray-700">{agendaItem.infos}</p>
+                  <p className="text-gray-700 whitespace-pre-line">
+                    {agendaItem.infos}
+                  </p>
                 </div>
               </div>
             )}

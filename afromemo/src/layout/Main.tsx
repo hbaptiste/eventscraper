@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import Header from "../components/Header";
 import { Outlet } from "react-router-dom";
 import Footer from "../components/Footer";
@@ -7,8 +7,14 @@ import MessageProvider, { useMessage } from "../hooks/useMessage";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 
 const NotifyBlock = () => {
-  const { style, isVisible, message } = useMessage();
-  return isVisible ? <div className={style}>{message}</div> : <></>;
+  const { style, isVisible, message, messageRef } = useMessage();
+  return isVisible ? (
+    <div ref={messageRef} className={style}>
+      {message}
+    </div>
+  ) : (
+    <></>
+  );
 };
 
 const FallbackComponent = ({ error }: FallbackProps) => {

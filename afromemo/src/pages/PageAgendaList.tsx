@@ -102,11 +102,6 @@ const AgendaListView = () => {
     fetchAgendaItems();
   }, [isAdmin, isReady, token]);
 
-  // test Message
-  useEffect(() => {
-    // setMessage("This is it", { delay: 3000 });
-  }, []);
-
   const fetchUserSubmissions = async () => {
     const response = await fetch("/api/protected/submissions", {
       headers: {
@@ -603,7 +598,7 @@ const AgendaListView = () => {
                             rel="noopener noreferrer"
                             className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
                           >
-                            Lien externe
+                            Site de l'événement
                             <svg
                               className="ml-1 w-3 h-3"
                               fill="none"
