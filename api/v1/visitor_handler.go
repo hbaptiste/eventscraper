@@ -14,6 +14,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -138,7 +139,7 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 				createErrorResponse(writer, "Failed to read body", http.StatusBadRequest)
 				return
 			}
-			fmt.Printf("%+v", visitorRequest)
+
 			_, issues := visitorRequest.isValid(validators.FormSubmissionSchema)
 			if issues != nil {
 				log.Printf("visitorRequest issues %v", issues)
@@ -245,14 +246,39 @@ func getAllSubmissions(service *ServiceMiddleWare, writer http.ResponseWriter, r
 		writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
 			Message: err.Error(),
 		})
+		return
 	}
 	response := make([]VisitorFormRequest, len(submissions))
 
 	for _, submission := range submissions {
 		var agenda db.AgendaEntry
-		err := json.Unmarshal([]byte(submission.Data), &agenda)
+
+		// translate first
+		var data Record
+		err := json.Unmarshal([]byte(submission.Data), &data)
 		if err != nil {
-			fmt.Printf("getAllSubmissionsError:: %v", err)
+			fmt.Printf("getAllSubmissionsError:: %v\n", err)
+			writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
+				Message: err.Error(),
+			})
+		}
+		if price, ok := data["price"]; ok {
+			switch v := price.(type) {
+			case float64:
+				data["price"] = strconv.FormatFloat(v, 'f', 2, 64)
+			}
+		}
+		// remarshall
+		jsonData, err := json.Marshal(data)
+		if err != nil {
+			writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
+				Message: err.Error(),
+			})
+			return
+		}
+		err = json.Unmarshal(jsonData, &agenda)
+		if err != nil {
+			fmt.Printf("getAllSubmissionsError:: %v\n", err)
 			continue
 		}
 

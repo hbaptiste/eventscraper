@@ -101,7 +101,7 @@ tasks:
       - rsync -avz ./agenda.db {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_API_DIR}}/agenda.db
       - rsync -avz ./remote/.htaccess {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.SERVER_HOME}}/.htaccess
 
-  deploy:transfer-build:
+  deploy:transfer-front:
     desc: Transfer front
     cmds:
       - echo "transfer front"

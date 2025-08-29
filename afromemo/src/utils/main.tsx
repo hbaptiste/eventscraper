@@ -186,6 +186,15 @@ export const formatDate = (dateString: string) => {
   });
 };
 
+export const formatCurrentDate = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const mount = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const formatted = `${year}-${mount}-${day}`;
+  return formatted;
+};
+
 export const formatDateRange = (agendaItem: AgendaItem) => {
   const startDate = formatDate(agendaItem.startdate);
   if (agendaItem.enddate) {

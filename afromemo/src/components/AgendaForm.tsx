@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useMessage } from "../hooks/useMessage";
 import useAuthStore from "../store/useAuthStore";
 
@@ -19,31 +19,9 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   props: AgendaEntryFormProp
 ): React.ReactElement => {
   const [creatorEmail, setCreatorEmail] = useState<string>(props.email || "");
-  const emptyAgendaItem: AgendaItem = {
-    title: "",
-    link: "",
-    price: "",
-    address: "",
-    startdate: "",
-    enddate: "",
-    description: "",
-    poster: "",
-    category: "",
-    tags: [],
-    infos: "",
-    status: Status.PENDING,
-    place: "",
-    starttime: "",
-    endtime: "",
-    subtitle: "",
-    venuename: "",
-    email: "",
-  };
 
-  const [formData, setFormData] = useState<AgendaItem>(
-    props.agendaItem || emptyAgendaItem
-  );
-
+  const [formData, setFormData] = useState<AgendaItem>(props.agendaItem);
+  console.log("<props>", props);
   // New state for conditional field visibility
   const [showSubtitle, setShowSubtitle] = useState(false);
   const [showEndDate, setShowEndDate] = useState(false);
@@ -52,11 +30,10 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   const { token } = useAuthStore((state: any) => state);
 
   // error
-  const [hasError, setHasError] = useState<boolean>(false);
+  const [, setHasError] = useState<boolean>(false);
 
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
-  const [isPristine, setPristine] = useState<boolean>(true);
   const { showMessage } = useMessage();
 
   const BACKEND_IMAGE_URL = import.meta.env.VITE_BACKEND_IMAGE_PATH;
@@ -131,11 +108,11 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   };
 
   // validate form
-  useEffect(() => {
+  /* useEffect(() => {
     validateEventPeriod();
     validatePoster();
     // Validate poster
-  }, [formData]);
+  }, [formData]);*/
 
   const validatePoster = (): boolean => {
     return formData.poster.trim() == "" ? false : true;
@@ -156,12 +133,12 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
         setErrorMessage("Date de fin inférieure à date de début");
         return false;
       }
-      const today = new Date().setHours(0, 0, 0, 0);
+      /* const today = new Date().setHours(0, 0, 0, 0);
       const toCheck = new Date(enddate).setHours(0, 0, 0, 0);
       if (toCheck <= today) {
         setErrorMessage("Date de fin doit être supérieure à la date du jour");
         return false;
-      }
+      }*/
     }
 
     if (starttime.trim().length == 0 && endtime.trim().length > 0) {
@@ -422,19 +399,19 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
         <div className="w-full flex justify-between mb-4 gap-4">
           <div className="flex-1">
             <label className="block text-gray-700 mb-2" htmlFor="time">
-              Date (DD-MM-YYYY)
+              Date de début (DD/MM/YYYY)
             </label>
             <input
               type="date"
               id="time"
               required
               name="startdate"
+              min={`${new Date().getFullYear()}-01-01`}
               className="w-full p-2 border rounded"
-              defaultValue={formData.startdate || ""}
-              onBlur={handleChange}
+              defaultValue={formData.startdate}
               onInput={clearValidity}
               onInvalid={(e) => {
-                const target = e.target as HTMLSelectElement;
+                const target = e.target as HTMLInputElement;
                 target.setCustomValidity(
                   "Vous devez fournir une date de début"
                 );
@@ -452,14 +429,14 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             {showEndDate && (
               <div className="flex-1">
                 <label className="block text-gray-700 mb-2" htmlFor="endtime">
-                  Date de fin (DD-MM-YYYY)
+                  Date de fin (DD/MM/YYYY)
                 </label>
                 <input
                   type="date"
                   id="enddate"
                   name="enddate"
                   className="w-full p-2 border rounded"
-                  defaultValue={formData.enddate || ""}
+                  defaultValue={formData.enddate}
                   onBlur={handleChange}
                 />
               </div>
@@ -477,7 +454,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
               name="starttime"
               required
               className="w-full p-2 border rounded"
-              defaultValue={formData.starttime || ""}
+              defaultValue={formData.starttime}
               onBlur={handleChange}
               onInput={clearValidity}
               onInvalid={(e) => {
@@ -497,7 +474,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
               id="endtime"
               name="endtime"
               className="w-full p-2 border rounded"
-              defaultValue={formData.endtime || ""}
+              defaultValue={formData.endtime}
               onBlur={handleChange}
             />
           </div>
@@ -538,12 +515,12 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             name="poster"
             className="w-full p-2 border rounded"
             onChange={handlePosterChange}
-            required
+            required={formData.poster.trim() == ""}
             onInput={clearValidity}
             onInvalid={(e) => {
               const target = e.target as HTMLInputElement;
               target.setCustomValidity(
-                "Vous devez fournir un poster pour votre événement"
+                "Vous devez fournir un visuel pour votre événement"
               );
             }}
           />

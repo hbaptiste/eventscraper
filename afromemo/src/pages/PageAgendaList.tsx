@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import agendaFixture from "../data/agenda.fixtures";
 import useLocalStorage from "../hooks/useLocalStorage";
 import useAuthStore, { AuthInfos } from "../store/useAuthStore";
 import { AgendaItem, Places, Status, UserSubmission } from "../types";
@@ -8,14 +7,14 @@ import { Plus } from "lucide-react";
 import { fetch, formatDateRange, getPlace } from "../utils/main";
 
 const AgendaListView = () => {
-  const [agendaItems, setAgendaItems] = useState<AgendaItem[]>(agendaFixture);
+  const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [userSubmissionIsLoaded, setUserSubmissionIsLoaded] =
     useState<boolean>(false);
 
-  // const [preventNextQuery, setPreventNextQuery] = useState<boolean>(false);
+  const [total, setTotal] = useState<number>(0);
 
   const [filter, setFilter] = useState({
     category: "",
@@ -32,6 +31,7 @@ const AgendaListView = () => {
     "authInfos",
     null
   );
+
   /**Token */
   const { token } = useAuthStore((state: any) => state);
 
@@ -55,6 +55,7 @@ const AgendaListView = () => {
   }, [isReady, authInfos]);
   // Fetch agenda items from API
   useEffect(() => {
+    let canFetch = true;
     const fetchAgendaItems = async () => {
       try {
         setLoading(true);
@@ -99,7 +100,10 @@ const AgendaListView = () => {
         setLoading(false);
       }
     };
-    fetchAgendaItems();
+    if (canFetch) fetchAgendaItems();
+    return () => {
+      canFetch = false;
+    };
   }, [isAdmin, isReady, token]);
 
   const fetchUserSubmissions = async () => {
@@ -150,16 +154,20 @@ const AgendaListView = () => {
       if (filter.place) {
         return item.place.trim() == filter.place.trim();
       }
-
       return true;
     });
+
     if (filter.userSubmitted == false) {
       filteredItems = filteredItems.filter(
         (item) => item.email == undefined || item.email == ""
       );
+      setTotal(agendaItems.length);
     } else {
       filteredItems = filteredItems.filter(
         (item) => item.email && item.email != ""
+      );
+      setTotal(
+        agendaItems.filter((item) => item.userSubmission == true).length
       );
     }
 
@@ -171,10 +179,16 @@ const AgendaListView = () => {
     if (userSubmissionIsLoaded) {
       return;
     }
+    let canFetch = true;
     if (filter.userSubmitted == true) {
-      fetchUserSubmissions();
-      setUserSubmissionIsLoaded(true);
+      if (canFetch) {
+        fetchUserSubmissions();
+        setUserSubmissionIsLoaded(true);
+      }
     }
+    return () => {
+      canFetch = false;
+    };
   }, [userSubmissionIsLoaded, filter]);
 
   // Handle filter changes
@@ -363,7 +377,7 @@ const AgendaListView = () => {
                   htmlFor="userSubmitted"
                   className="text-sm text-gray-700"
                 >
-                  Voir les événement créés par les utilisateurs
+                  Voir les événements créés par les utilisateurs
                 </label>
               </div>
             </div>
@@ -390,7 +404,7 @@ const AgendaListView = () => {
         <>
           {/* Results count */}
           <p className="text-gray-600 mb-4">
-            {filteredItems.length} sur {agendaItems.length} items
+            {filteredItems.length} sur {total} items
           </p>
 
           {/* Agenda items list */}
@@ -519,17 +533,19 @@ const AgendaListView = () => {
                           </div>
                         )}
 
-                        {item.price.trim() !== "" && (
-                          <div>
-                            <span className="text-xs text-gray-500 uppercase tracking-wide">
-                              Prix
-                            </span>
-                            <p className="text-sm text-gray-800 font-medium">
-                              {item.price}
-                            </p>
-                          </div>
-                        )}
-                        {item.price.trim() == "" && (
+                        {item.price.trim() !== "" &&
+                          item.price.trim() !== "0.00" && (
+                            <div>
+                              <span className="text-xs text-gray-500 uppercase tracking-wide">
+                                Prix
+                              </span>
+                              <p className="text-sm text-gray-800 font-medium">
+                                {item.price}
+                              </p>
+                            </div>
+                          )}
+                        {(item.price.trim() == "" ||
+                          item.price.trim() == "0.00") && (
                           <div>
                             <span className="text-xs text-gray-500 uppercase tracking-wide">
                               Prix

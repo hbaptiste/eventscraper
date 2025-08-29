@@ -6,7 +6,7 @@ import { AgendaItem, Status } from "../types";
 
 import useUserInfos from "../hooks/useUserInfos";
 
-import { fetch } from "../utils/main";
+import { fetch, formatCurrentDate } from "../utils/main";
 import { useMessage } from "../hooks/useMessage";
 
 const PageAgendaEntryForm: React.FC = (): React.ReactElement => {
@@ -17,13 +17,17 @@ const PageAgendaEntryForm: React.FC = (): React.ReactElement => {
 
   const { itemId } = useParams();
   const agendaItem = location.state?.agendaItem as AgendaItem;
+
   const emptyAgendaItem: AgendaItem = {
     title: "",
     link: "",
     price: "",
     address: "",
-    startdate: "",
-    enddate: "",
+    startdate:
+      navigator.userAgent.indexOf("Safari") != -1 ? formatCurrentDate() : "",
+    enddate:
+      navigator.userAgent.indexOf("Safari") != -1 ? formatCurrentDate() : "",
+
     description: "",
     poster: "",
     category: "",
@@ -31,10 +35,11 @@ const PageAgendaEntryForm: React.FC = (): React.ReactElement => {
     infos: "",
     status: Status.PENDING,
     place: "",
-    starttime: "",
-    endtime: "",
+    starttime: navigator.userAgent.indexOf("Safari") != -1 ? "00:00" : "",
+    endtime: navigator.userAgent.indexOf("Safari") != -1 ? "00:00" : "",
     subtitle: "",
     venuename: "",
+    email: "",
   };
 
   const [formData] = useState<AgendaItem>(agendaItem || emptyAgendaItem);
@@ -53,10 +58,14 @@ const PageAgendaEntryForm: React.FC = (): React.ReactElement => {
         "Error: Une erreur s'est produite. Veuillez réessayer ultérieurement!"
       );
     } else {
-      setMessage("Votre évenement a bien été créé.");
       setTimeout(() => {
         navigate("/");
-      }, 1000);
+      });
+      setMessage(
+        itemId
+          ? "Votre évenement a bien été modifié."
+          : "Votre évenement a bien été créé."
+      );
     }
   };
 

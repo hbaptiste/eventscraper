@@ -5,7 +5,7 @@ import { useMessage } from "../hooks/useMessage";
 import useUserInfos from "../hooks/useUserInfos";
 
 import { AgendaItem, Status, UserSubmission } from "../types";
-import { fetch } from "../utils/main";
+import { fetch, formatCurrentDate } from "../utils/main";
 
 type AgendaFormProps = {
   forceUserContext?: boolean;
@@ -14,15 +14,18 @@ type AgendaFormProps = {
 const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
   props: AgendaFormProps
 ): React.ReactElement => {
-  const { tokenId } = useParams();
+  const { tokenId } = useParams<{ tokenId: string }>();
   const { forceUserContext } = props;
   const emptyAgendaItem: AgendaItem = {
     title: "",
     link: "",
     price: "",
     address: "",
-    startdate: "",
-    enddate: "",
+    startdate:
+      navigator.userAgent.indexOf("Safari") != -1 ? formatCurrentDate() : "",
+    enddate:
+      navigator.userAgent.indexOf("Safari") != -1 ? formatCurrentDate() : "",
+
     description: "",
     poster: "",
     category: "",
@@ -30,10 +33,11 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
     infos: "",
     status: Status.PENDING,
     place: "",
-    starttime: "",
-    endtime: "",
+    starttime: navigator.userAgent.indexOf("Safari") != -1 ? "00:00" : "",
+    endtime: navigator.userAgent.indexOf("Safari") != -1 ? "00:00" : "",
     subtitle: "",
     venuename: "",
+    email: "",
   };
 
   const [formData, setFormData] = useState<AgendaItem | null>(null);
@@ -166,7 +170,7 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
                 Vous avez reçu un email vous invitant à valider votre adresse
                 email.
               </p>
-              <p>Pensez à regarder dans vos spams!</p>
+              <p>Pensez à regarder dans vos spams !</p>
             </div>
           )}
           {tokenId && !isAdmin && (

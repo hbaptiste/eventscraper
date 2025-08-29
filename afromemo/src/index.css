@@ -79,5 +79,23 @@ button:focus-visible {
   a:hover {
     color: #747bff;
   }
- 
 }
+
+
+/*input[type="date"]::-webkit-input-placeholder{
+  color: orangered;
+}*/
+
+/*
+input[type="date"]::-webkit-datetime-edit {
+  color: transparent;
+}
+
+input[type="date"]:valid::-webkit-datetime-edit {
+  color: #000; /* or your preferred text color
+}
+
+input[type="date"]:invalid::-webkit-datetime-edit {
+  color: initial; /* or your preferred text color
+}
+*/

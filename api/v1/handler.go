@@ -421,7 +421,7 @@ func authMiddleware(next http.Handler) http.Handler {
 		}
 		// token extraction
 		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-		fmt.Printf("Received access Token [%v]", tokenStr)
+
 		// Parse the token
 		claims := &AccessClaims{}
 		token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
