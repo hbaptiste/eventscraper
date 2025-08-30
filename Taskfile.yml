@@ -221,7 +221,12 @@ tasks:
     cmds:
       - sqlc generate
   
-
+  deploy:backend:
+    desc: Copy the server api to the server
+    deps: 
+      - deploy:stop-service
+    cmds:
+      - scp -r {{.LOCAL_BUILD_PATH}}/* {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_API_DIR}}/
 
   dev:apply-migration:
     desc: Generate all repo

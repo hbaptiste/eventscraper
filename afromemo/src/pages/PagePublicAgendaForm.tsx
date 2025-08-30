@@ -23,8 +23,7 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
     address: "",
     startdate:
       navigator.userAgent.indexOf("Safari") != -1 ? formatCurrentDate() : "",
-    enddate:
-      navigator.userAgent.indexOf("Safari") != -1 ? formatCurrentDate() : "",
+    enddate: "",
 
     description: "",
     poster: "",
@@ -35,6 +34,7 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
     place: "",
     starttime: navigator.userAgent.indexOf("Safari") != -1 ? "00:00" : "",
     endtime: navigator.userAgent.indexOf("Safari") != -1 ? "00:00" : "",
+
     subtitle: "",
     venuename: "",
     email: "",

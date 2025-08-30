@@ -15,7 +15,7 @@ const PageAgendaEntryForm: React.FC = (): React.ReactElement => {
   const { setMessage } = useMessage();
   const navigate = useNavigate();
 
-  const { itemId } = useParams();
+  const { itemId } = useParams<{ itemId: string }>();
   const agendaItem = location.state?.agendaItem as AgendaItem;
 
   const emptyAgendaItem: AgendaItem = {
@@ -25,8 +25,7 @@ const PageAgendaEntryForm: React.FC = (): React.ReactElement => {
     address: "",
     startdate:
       navigator.userAgent.indexOf("Safari") != -1 ? formatCurrentDate() : "",
-    enddate:
-      navigator.userAgent.indexOf("Safari") != -1 ? formatCurrentDate() : "",
+    enddate: "",
 
     description: "",
     poster: "",

@@ -3,7 +3,7 @@ import { useMessage } from "../hooks/useMessage";
 import useAuthStore from "../store/useAuthStore";
 
 import { AgendaItem, Categories, Places, Status } from "../types";
-import { fetch } from "../utils/main";
+import { fetch, formatCurrentDate } from "../utils/main";
 
 interface AgendaEntryFormProp {
   agendaItem: AgendaItem;
@@ -59,7 +59,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
     if (itemCopy.subtitle && itemCopy.subtitle.trim() !== "") {
       setShowSubtitle(true);
     }
-    if (itemCopy.endtime && itemCopy.endtime.trim() !== "") {
+    if (itemCopy.enddate && itemCopy.enddate.trim() !== "") {
       setShowEndDate(true);
     }
     if (itemCopy.poster && itemCopy.poster.length) {
@@ -223,11 +223,22 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   };
 
   const toggleEndDate = () => {
-    setShowEndDate(!showEndDate);
     if (showEndDate) {
-      // Clear endtime when hiding
-      setFormData({ ...formData, enddate: "" });
+      // Clear endtime
+      setFormData({
+        ...formData,
+        enddate: "",
+      });
+    } else {
+      setFormData({
+        ...formData,
+        enddate:
+          navigator.userAgent.indexOf("Safari") != -1
+            ? formatCurrentDate()
+            : "",
+      });
     }
+    setShowEndDate(!showEndDate);
   };
   const clearValidity = (
     e: React.FormEvent<HTMLInputElement | HTMLSelectElement>
