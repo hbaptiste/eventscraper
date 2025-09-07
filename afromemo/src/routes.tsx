@@ -10,6 +10,7 @@ import PageAgendaPublicForm from "./pages/PagePublicAgendaForm";
 import PageSubmissionConfirmation from "./pages/PageSubmissionConfirmation";
 import PageSubmissionDeletion from "./pages/PageSubmissionDeletion";
 import PageError from "./pages/PageError";
+import PageUserCondition from "./pages/pageUserCondition";
 
 const ProtectedForm = WithProtection(PageAgendaForm);
 
@@ -78,6 +79,11 @@ const Routes = [
         name: "AgendaForm",
         path: "submission/:tokenId/delete",
         element: <PageSubmissionDeletion />,
+      },
+      {
+        name: "userCondition",
+        path: "agenda/charte-d-utilisation",
+        element: <PageUserCondition />,
       },
     ],
   },

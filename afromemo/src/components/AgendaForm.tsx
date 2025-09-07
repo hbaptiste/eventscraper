@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useMessage } from "../hooks/useMessage";
 import useAuthStore from "../store/useAuthStore";
 
@@ -25,6 +25,8 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   // New state for conditional field visibility
   const [showSubtitle, setShowSubtitle] = useState(false);
   const [showEndDate, setShowEndDate] = useState(false);
+
+  const userConditionRef = useRef<HTMLInputElement>(null);
 
   // auth
   const { token } = useAuthStore((state: any) => state);
@@ -166,6 +168,12 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
     }
     isValid = validatePoster();
     if (!isValid) {
+      return;
+    }
+    if (props.displayEmail && !userConditionRef.current?.checked) {
+      setErrorMessage(
+        "Vous devez confirmer avoir pris connaissance de la charte d'utilisation !"
+      );
       return;
     }
     setLoading(true);
@@ -638,6 +646,32 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
                 );
               }}
             />
+          </div>
+        )}
+        {props.displayEmail && (
+          <div className="mb-6">
+            <label className="block text-gray-700 mb-2" htmlFor="userCondition">
+              Condition d'utilisation
+            </label>
+            <div className="flex gap-2">
+              <input
+                className="p-2 border rounded accent-afrm-orange-3"
+                ref={userConditionRef}
+                id="userCondition"
+                type="checkbox"
+              ></input>
+              <p>
+                Je confirme avoir lu et compris la{" "}
+                <a
+                  className="text-afrm-orange-3"
+                  target="_blank"
+                  href={"/agenda/charte-d-utilisation"}
+                >
+                  charte d'utilisation
+                </a>{" "}
+                d'Afromemo
+              </p>
+            </div>
           </div>
         )}
         <button

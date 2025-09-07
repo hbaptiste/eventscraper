@@ -30,7 +30,7 @@ export default function PageAgendaItemDetailView() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   if (!itemId) {
-    return <div className="not-found">Aucun événement pour l'instant!</div>; // Handle case where event is not found
+    return <div className="not-found">Aucun événement pour l'instant !</div>; // Handle case where event is not found
   }
   // If no item is provided, use sample data
   const BACKEND_IMAGE_URL = import.meta.env.VITE_BACKEND_IMAGE_PATH;
@@ -123,7 +123,7 @@ export default function PageAgendaItemDetailView() {
 
               <div className="flex items-start space-x-3">
                 <div className="flex items-start space-x-3">
-                  <Clock className="text-blue-600 flex-shrink-0 mt-1" />
+                  <Clock className="text-gray-500 flex-shrink-0 mt-1" />
                   <div>
                     <p className="text-sm text-gray-500 font-medium">
                       Date & Heure

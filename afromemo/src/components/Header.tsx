@@ -19,7 +19,7 @@ export default function Header({
   }, [authInfos]);
 
   return (
-    <header className="border-b border-gray-300 bg-white p-2 mb-5">
+    <header className="border-b border-afrm-black-1/20 bg-white p-2 mb-5">
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center space-x-4">
           {showBackButton && (
@@ -47,7 +47,7 @@ export default function Header({
         ) : (
           <Link
             to="/login"
-            className="flex items-center font-medium text-blue-600 dark:text-blue-500 hover:underline"
+            className="flex items-center font-medium !text-afrm-black-1"
           >
             <LogIn className="w-4 h-4 mr-2" />
             login

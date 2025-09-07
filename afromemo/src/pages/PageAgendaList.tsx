@@ -2,7 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useLocalStorage from "../hooks/useLocalStorage";
 import useAuthStore, { AuthInfos } from "../store/useAuthStore";
-import { AgendaItem, Places, Status, UserSubmission } from "../types";
+import {
+  AgendaItem,
+  Places,
+  Status,
+  UserSubmission,
+  Categories,
+} from "../types";
 import { Plus } from "lucide-react";
 import { fetch, formatDateRange, getPlace } from "../utils/main";
 
@@ -270,118 +276,92 @@ const AgendaListView = () => {
           <Plus></Plus> Créer un nouvel événement
         </Link>
       </div>
+      <div className="hidden flex flex-row gap-5 justify-between colorContainer">
+        <div className="bg-afrm-black-1 p-5 w-50">afrm-black-1</div>
+        <div className="bg-afrm-black-2 p-5 w-50">afrm-black-2</div>
+        <div className="bg-afrm-orange-1 p-5 w-50">afrm-orange-1</div>
+        <div className="bg-afrm-orange-2 p-5 w-50">afrm-orange-2</div>
+        <div className="bg-afrm-orange-3 p-5 w-50">afrm-orange-3</div>
+
+        <div className="bg-afrm-yellow-1 p-5 w-50">f</div>
+        <div className="bg-afrm-yellow-2 p-5 w-50">f</div>
+        <div className="bg-afrm-yellow-3 p-5 w-50">f</div>
+      </div>
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded shadow mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label
-              htmlFor="searchTerm"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Recherche
-            </label>
-            <input
-              type="text"
-              id="searchTerm"
-              name="searchTerm"
-              value={filter.searchTerm}
-              onChange={handleFilterChange}
-              placeholder="Recherche: mot clé, description, titre..."
-              className="w-full p-2 border rounded"
-            />
-          </div>
+      <div className="bg-white p-2 rounded shadow mb-2">
+        <div className="flex justify-center text-sm gap-1 lg:gap-5 cursor-pointer lg:text-lg  lg:mt-3 lg:mb-3">
+          {Object.entries(Places).map(([key, place]) => {
+            const isClicked = filter.place == key ? true : false;
 
-          <div>
-            <label
-              htmlFor="category"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Catégorie
-            </label>
-            <select
-              id="category"
-              name="category"
-              value={filter.category}
-              onChange={handleFilterChange}
-              className="w-full p-2 border rounded"
-            >
-              <option value=""> Toutes les catégories</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="status"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Lieu
-            </label>
-            <select
-              style={{ width: "200px" }}
-              id="place"
-              name="place"
-              value={filter.place}
-              onChange={handleFilterChange}
-              className="w-full p-2 border rounded"
-            >
-              <option value="">Lieux</option>
-              <option value={Places.GENEVE}>Grand Genève</option>
-              <option value={Places.LAUSANNE}>Lausanne</option>
-              <option value={Places.ALTSWISS}>Autre Suisse</option>
-              <option value={Places.INTERNATIONAL}>International</option>
-            </select>
-          </div>
-          {isAdmin && (
-            <div>
-              <label
-                htmlFor="status"
-                className="block text-sm font-medium text-gray-700 mb-1"
+            const className =
+              "flex rounded-2xl border text-sm px-2 py-1 lg:px-4 lg:py-2 items-center hover:bg-afrm-yellow-2";
+            const activeClassname = isClicked
+              ? className +
+                " bg-afrm-yellow-2 text-afrm-black-1 border-afrm-orange-3"
+              : className;
+            return (
+              <p
+                onClick={() => {
+                  setFilter((prev) => {
+                    key = filter.place == key ? "" : key; //set to null if already exists.
+                    return {
+                      ...prev,
+                      place: key,
+                    };
+                  });
+                }}
+                className={activeClassname}
               >
-                Status
-              </label>
-              <select
-                id="status"
-                name="status"
-                value={filter.status}
-                onChange={handleFilterChange}
-                className="w-full p-2 border rounded"
-              >
-                <option value="">Tous</option>
-                <option value={Status.ACTIVE}>Actif</option>
-                <option value={Status.INACTIVE}>Inactif</option>
-                <option value={Status.PENDING}>En attente</option>
-              </select>
-            </div>
-          )}
-          {isAdmin && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Entrées utilisateur
-              </label>
-              <div className="flex items-center space-x-2 p-2">
-                <input
-                  type="checkbox"
-                  id="userSubmitted"
-                  name="userSubmitted"
-                  checked={filter.userSubmitted}
-                  onChange={handleFilterChange}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                />
-
-                <label
-                  htmlFor="userSubmitted"
-                  className="text-sm text-gray-700"
+                {place}
+              </p>
+            );
+          })}
+        </div>
+        <div className="overflow-x-auto scrollbar-hide _border lg:mb-2">
+          <div className="flex space-x-2 text-base min-w-max lg:gap-3 lg:justify-center">
+            {Object.entries(Categories).map(([category, name]) => {
+              const isActive = category == filter.category ? true : false;
+              let className =
+                "whitespace-nowrap px-2 py-1  mt-3 mb-3 lg:px-4 lg:py-2 items-center hover:text-white cursor-pointer flex border text-afrm-black-1 border-afrm-orange-3 border-afrm-orange-3 hover:bg-afrm-orange-3 bdg-afrm-orange-1 rounded";
+              className = isActive
+                ? `${className} bg-afrm-orange-3 text-white`
+                : className;
+              return (
+                <p
+                  className={className}
+                  onClick={() => {
+                    setFilter((prev) => {
+                      return {
+                        ...prev,
+                        category: filter.category == category ? "" : category,
+                      };
+                    });
+                  }}
                 >
-                  Voir les événements créés par les utilisateurs
-                </label>
-              </div>
-            </div>
-          )}
+                  {name}
+                </p>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex justify-center">
+          <label
+            htmlFor="searchTerm"
+            className="hidden block text-sm font-medium text-gray-700 mb-1"
+          >
+            Recherche
+          </label>
+          <input
+            type="text"
+            id="searchTerm"
+            name="searchTerm"
+            value={filter.searchTerm}
+            onChange={handleFilterChange}
+            placeholder="Recherche: mot clé, description, titre..."
+            className="w-full p-2 border rounded"
+          />
         </div>
       </div>
 
@@ -403,7 +383,7 @@ const AgendaListView = () => {
       ) : (
         <>
           {/* Results count */}
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 mb-4 ml-2">
             {filteredItems.length} sur {total} items
           </p>
 
@@ -413,7 +393,7 @@ const AgendaListView = () => {
               {filteredItems.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
+                  className="rounded-lg shadow-sm border_ hover:shadow-md transition-shadow duration-200"
                   onMouseEnter={() => setHoveredItemId(item.id as string)}
                   onMouseLeave={() => setHoveredItemId(null)}
                 >
@@ -638,7 +618,7 @@ const AgendaListView = () => {
             </div>
           ) : (
             <div className="bg-white p-8 rounded shadow text-center">
-              <p className="text-gray-600">Aucun événement pour l'instant!</p>
+              <p className="text-gray-600">Aucun événement pour l'instant !</p>
             </div>
           )}
         </>
