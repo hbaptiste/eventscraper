@@ -215,11 +215,6 @@ const AgendaListView = () => {
     }));
   };
 
-  // Get unique categories for filter dropdown
-  const categories = Array.from(
-    new Set(agendaItems.map((item) => item.category))
-  ).filter(Boolean);
-
   // Get status badge class
   const getStatusBadgeClass = (status: number) => {
     switch (status) {
@@ -268,7 +263,7 @@ const AgendaListView = () => {
 
   return (
     <div className="w-full container mx-auto mb-6">
-      <div className="flex justify-end mb-6 mr-2">
+      <div className="hidden flex justify-end mb-6 mr-2">
         <Link
           to={isAdmin ? "/agenda/create" : "/agenda/public/new"}
           className="afromemo-btn flex justify-between bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
@@ -323,7 +318,7 @@ const AgendaListView = () => {
             {Object.entries(Categories).map(([category, name]) => {
               const isActive = category == filter.category ? true : false;
               let className =
-                "whitespace-nowrap px-2 py-1  mt-3 mb-3 lg:px-4 lg:py-2 items-center hover:text-white cursor-pointer flex border text-afrm-black-1 border-afrm-orange-3 border-afrm-orange-3 hover:bg-afrm-orange-3 bdg-afrm-orange-1 rounded";
+                "whitespace-nowrap px-2 py-1 mt-3 mb-3 lg:px-4 lg:py-2 font-medium items-center hover:text-white cursor-pointer flex border text-afrm-black-1 border-afrm-orange-3 border-afrm-orange-3 hover:bg-afrm-orange-3 bdg-afrm-orange-1 rounded";
               className = isActive
                 ? `${className} bg-afrm-orange-3 text-white`
                 : className;
@@ -383,9 +378,50 @@ const AgendaListView = () => {
       ) : (
         <>
           {/* Results count */}
-          <p className="text-gray-600 mb-4 ml-2">
-            {filteredItems.length} sur {total} items
-          </p>
+          <div className="flex justify-between items-center ml-2 mr-2 mt-5 mb-5">
+            <p className="text-gray-600 _mb-4">
+              {filteredItems.length} sur {total} items
+            </p>
+            {isAdmin && (
+              <div className="flex items-center gap-5 h-5">
+                <div className="flex items-center gap-5 status-filter">
+                  <label
+                    htmlFor="status"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Status
+                  </label>
+                  <select
+                    id="status"
+                    name="status"
+                    value={filter.status}
+                    onChange={handleFilterChange}
+                    className="w-full p-2 border rounded"
+                  >
+                    <option value="">Tous</option>
+                    <option value={Status.ACTIVE}>Actif</option>
+                    <option value={Status.INACTIVE}>Inactif</option>
+                    <option value={Status.PENDING}>En attente</option>
+                  </select>
+                </div>
+                <div className="flex gap-2 accent-afrm-orange-3">
+                  <input
+                    checked={filter.userSubmitted}
+                    name="userSubmitted"
+                    id="userSubmitted"
+                    type="checkbox"
+                    onChange={handleFilterChange}
+                  ></input>
+                  <label
+                    htmlFor="userSubmitted"
+                    className="text-sm font-medium"
+                  >
+                    Afficher les événements soumis par les utilisateurs
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Agenda items list */}
           {filteredItems.length > 0 ? (
@@ -397,7 +433,12 @@ const AgendaListView = () => {
                   onMouseEnter={() => setHoveredItemId(item.id as string)}
                   onMouseLeave={() => setHoveredItemId(null)}
                 >
-                  <div className="flex flex-col md:flex-row">
+                  <div
+                    onClick={() => {
+                      navigate(`/agenda/${item.id}`);
+                    }}
+                    className="flex flex-col md:flex-row"
+                  >
                     {/* Poster image on the left */}
                     {item.poster && (
                       <div className="w-full md:w-48 h-48 md:h-auto overflow-hidden relative group flex-shrink-0">
@@ -456,7 +497,9 @@ const AgendaListView = () => {
                               item.status
                             )}`}
                           >
-                            {item.category}
+                            {Categories[
+                              item.category as keyof typeof Categories
+                            ] || item.category}
                           </span>
                         )}
                       </div>
@@ -540,17 +583,24 @@ const AgendaListView = () => {
                       {/* Tags */}
                       {item.tags && item.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-3">
-                          {item.tags.slice(0, 4).map((tag, index) => (
-                            <span
-                              key={index}
-                              className="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-md"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                          {item.tags.length > 4 && (
+                          {item.tags
+                            .filter((tag) => tag.trim() != "")
+                            .slice(0, 4)
+                            .map((tag, index) => (
+                              <span
+                                key={index}
+                                className="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-md"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          {item.tags.filter((tag) => tag.trim() != "").length >
+                            4 && (
                             <span className="text-xs text-gray-500 px-2 py-1">
-                              +{item.tags.length - 4} more
+                              +
+                              {item.tags.filter((tag) => tag.trim() != "")
+                                .length - 4}{" "}
+                              more
                             </span>
                           )}
                         </div>
@@ -571,7 +621,7 @@ const AgendaListView = () => {
                             <Link
                               to={`/agenda/${item.id}/edit`}
                               state={{ agendaItem: item }}
-                              className="text-gray-600 hover:text-gray-800 text-sm"
+                              className="text-blue-600 hover:text-blue-800 text-sm"
                             >
                               Éditer
                             </Link>
@@ -580,7 +630,7 @@ const AgendaListView = () => {
                             <Link
                               to={`/agenda/public/${item.token}/validate`}
                               state={{ agendaItem: item }}
-                              className="text-gray-600 hover:text-gray-800 text-sm"
+                              className="text-blue-600 hover:text-blue-800 font-medium text-sm"
                             >
                               Valider
                             </Link>

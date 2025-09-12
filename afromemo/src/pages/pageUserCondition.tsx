@@ -10,29 +10,42 @@ const PageUserCondition = () => {
 
         <p className="mb-3">
           <span className="">AFROMEMO.CH</span> est un agenda culturel et
-          événementiel suisse romand gratuit mis à disposition de ceux et celles
+          événementiel suisse romand gratuit mis à disposition{" "}
+          <span className="font-bold">
+            des associations et des institutions
+          </span>{" "}
           qui désirent annoncer leurs événements ayant un intérêt particulier
           pour les afrodescendant-e-s. De réunir ces événements sur une même
           plateforme, leur donne une certaine visibilité, et permet aux publics
           qui s’y intéressent de pouvoir les repérer plus facilement.
         </p>
         <p className="mb-3 font-medium">
-          Les personnes qui annoncent peuvent proposer, et les internautes
-          peuvent sélectionner, des événements répartis sous les rubriques
-          suivantes :
+          Les organes qui les annoncent peuvent proposer, et les internautes qui
+          les consultent peuvent sélectionner, des événements répartis sous les
+          rubriques suivantes :
         </p>
         <ul className="mb-6 pt-6 pl-12 list-disc font-semibold">
-          <li>Spectacles (théâtre, danse, performances, cinéma)</li>
           <li>Musiques et fêtes</li>
+          <li>
+            Spectacles{" "}
+            <span className="text-xm">
+              (théâtre, danse, comédies-musicales, opéras, performances, cinéma,
+              humour)
+            </span>
+          </li>
           <li>Expositions</li>
           <li>
-            Conférences et mobilisation (rencontres, engagements, luttes,
-            militantisme, activisme, etc.)
+            Conférences et mobilisation{" "}
+            <span className="text-sm">
+              (rencontres, engagements, luttes, militantisme, etc.)
+            </span>
           </li>
           <li>Jeunes</li>
           <li>
-            Manifestations et autres (festivals, rencontres littéraires,
-            ateliers, etc.)
+            Manifestations et autres{" "}
+            <span className="text-sm">
+              (festivals, rencontres littéraires, ateliers, etc.)
+            </span>
           </li>
         </ul>
 
@@ -40,14 +53,30 @@ const PageUserCondition = () => {
           L’annonce d’événements religieux et commerciaux n’est pas acceptée.
         </p>
         <p className="mb-3 font-medium">
-          Les événements peuvent sont répartis selon les "régions" suivantes :
+          Les événements annoncés sont répartis selon les "régions" suivantes :
         </p>
 
         <ul className="mb-6 pl-12 list-disc font-semibold">
-          <li>À Genève </li>
+          <li>
+            Dans le Grand Genève{" "}
+            <span className="text-sm">
+              (Genève, Annemasse, Ferney-Voltaire, etc.)
+            </span>
+          </li>
           <li>À Lausanne </li>
-          <li>En Suisse globale (dans toute la suisse)</li>
-          <li>À l’international</li>
+          <li>
+            Dans la Suisse globale{" "}
+            <span className="text-sm">
+              (dans toute la Suisse, ailleurs qu’à Genève et Lausanne)
+            </span>
+          </li>
+          <li>
+            À l’international{" "}
+            <span className="text-sm">
+              (que des événements reconnus et/ou officiellement vérifiables qui
+              ont lieu ailleurs dans le monde)
+            </span>
+          </li>
         </ul>
         <p className="mb-3">
           Les <span className="font-bold">tags</span> permettent de mettre les

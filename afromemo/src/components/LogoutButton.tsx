@@ -21,7 +21,7 @@ const LogoutButton = () => {
         },
       });
       if (!response.ok) {
-        console.warn("Error while calling");
+        console.warn("Error while logging out");
       }
     } catch (error) {
       console.error("Logout error", error);

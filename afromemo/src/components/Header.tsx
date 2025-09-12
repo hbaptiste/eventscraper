@@ -1,8 +1,9 @@
 import React, { useEffect } from "react";
-import { ChevronLeft, LogIn } from "lucide-react";
+import { ChevronLeft, LogIn, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import useAuthStore from "../store/useAuthStore";
 import LogoutButton from "./LogoutButton";
+import useUserInfos from "../hooks/useUserInfos";
 
 type HeaderProps = {
   showBackButton: boolean;
@@ -13,6 +14,7 @@ export default function Header({
   onBackClick,
 }: HeaderProps): React.ReactElement {
   const { authInfos } = useAuthStore();
+  const { isAdmin } = useUserInfos();
 
   useEffect(() => {
     if (!authInfos) return;
@@ -41,18 +43,36 @@ export default function Header({
             </Link>
           </div>
         </div>
-
-        {authInfos && authInfos.isAuthenticated ? (
-          <LogoutButton />
-        ) : (
-          <Link
-            to="/login"
-            className="flex items-center font-medium !text-afrm-black-1"
+        <div className="text-xs sm:text-base flex justify-center gap-5 items-center">
+          <a
+            className="text-afrm-orange-3 underline underline-offset-1 font-medium"
+            href="/agenda/charte-d-utilisation"
           >
-            <LogIn className="w-4 h-4 mr-2" />
-            login
+            Charte d'utilisation
+          </a>
+
+          <Link
+            to={isAdmin ? "/agenda/create" : "/agenda/public/new"}
+            className="afromemo-btn flex justify-center items-center sm:text-base bg-blue-500 hover:bg-blue-600 text-white px-1 py-1 md:px-4 md:py-2 rounded"
+          >
+            <Plus className="mr-1 text-sm"></Plus>{" "}
+            <span className="hidden sm:block">Créer un nouvel événement</span>
           </Link>
-        )}
+
+          <div role="login_logout" className="hidden">
+            {authInfos && authInfos.isAuthenticated ? (
+              <LogoutButton />
+            ) : (
+              <Link
+                to="/login"
+                className="flex items-center font-medium !text-afrm-black-1"
+              >
+                <LogIn className="w-4 h-4 mr-2" />
+                login
+              </Link>
+            )}
+          </div>
+        </div>
       </div>
     </header>
   );

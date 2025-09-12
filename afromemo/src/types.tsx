@@ -36,10 +36,10 @@ export enum Places {
 }
 
 export enum Categories {
+  MUSIQUE = "Musique et fêtes",
   SPECTACLES = "Spectacles",
-  CONFERENCES = "Conférences et mobilisation",
   EXPOSITIONS = "Expositions",
-  MUSIQUE = "Musique et fête",
+  CONFERENCES = "Conférences et mobilisation",
   JEUNES = "Jeunes",
   DIVERS = "Divers",
 }

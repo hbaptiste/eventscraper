@@ -235,9 +235,9 @@ export default function PageAgendaItemDetailView() {
                 onClick={() => {
                   generateICSFile(agendaItem);
                 }}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg flex-1 flex justify-center items-center"
+                className="bg-afrm-black-1 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg flex-1 flex justify-center items-center"
               >
-                <Calendar className="mr-2" size={18} />
+                <Calendar className="mr-2" _size={18} />
                 Ajouter à votre calendrier
               </button>
             </div>
