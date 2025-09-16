@@ -70,6 +70,30 @@ func (q *Queries) CreateFormSubmission(ctx context.Context, arg CreateFormSubmis
 	return err
 }
 
+const getSubmissionByID = `-- name: GetSubmissionByID :one
+SELECT id, email, data, edit_token, cancel_token, created_at, updated_at, status, expired_at, confirmation_token
+    FROM form_submissions
+    WHERE ID = ?
+`
+
+func (q *Queries) GetSubmissionByID(ctx context.Context, id string) (FormSubmission, error) {
+	row := q.db.QueryRowContext(ctx, getSubmissionByID, id)
+	var i FormSubmission
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Data,
+		&i.EditToken,
+		&i.CancelToken,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Status,
+		&i.ExpiredAt,
+		&i.ConfirmationToken,
+	)
+	return i, err
+}
+
 const getSubmissionByToken = `-- name: GetSubmissionByToken :one
 SELECT id, email, data, edit_token, cancel_token, confirmation_token, created_at, updated_at, expired_at, status
     FROM form_submissions 

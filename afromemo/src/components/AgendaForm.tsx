@@ -429,6 +429,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
               className="w-full p-2 border rounded"
               defaultValue={formData.startdate}
               onInput={clearValidity}
+              onBlur={handleChange}
               onInvalid={(e) => {
                 const target = e.target as HTMLInputElement;
                 target.setCustomValidity(

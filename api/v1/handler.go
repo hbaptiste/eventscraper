@@ -953,9 +953,11 @@ func StartApiServer(portNumber int) {
 	mux.HandleFunc("/api/csrfToken", withCORS(csrfTokenHandler))
 
 	// handle visitor submission
-	mux.HandleFunc("/api/submissions/", withCORS(SubmissionHandler(serviceMiddleWare)))
 	mux.HandleFunc("/api/submissions/confirm", withCORS(ConfirmSubmission(serviceMiddleWare)))
 	mux.HandleFunc("/api/submissions/delete", withCORS(SubmissionHandler(serviceMiddleWare)))
+	mux.HandleFunc("/api/submissions/diff/", withCORS(GetSubmissionDiff(serviceMiddleWare)))
+
+	mux.HandleFunc("/api/submissions/", withCORS(SubmissionHandler(serviceMiddleWare)))
 	mux.HandleFunc("/api/submissions", withCORS(HandlerVisitorForm(serviceMiddleWare)))
 
 	// to remove

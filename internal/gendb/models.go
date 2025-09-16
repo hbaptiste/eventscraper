@@ -13,7 +13,7 @@ type AgendaEntry struct {
 	ID                   string
 	Title                string
 	Link                 string
-	Price                sql.NullFloat64
+	Price                string
 	Address              string
 	Startdate            string
 	Description          string
@@ -25,10 +25,10 @@ type AgendaEntry struct {
 	Status               interface{}
 	Starttime            interface{}
 	Endtime              interface{}
+	EventLifecycleStatus interface{}
 	Subtitle             interface{}
 	Enddate              interface{}
 	Venuename            interface{}
-	EventLifecycleStatus interface{}
 	EventOwner           int64
 }
 

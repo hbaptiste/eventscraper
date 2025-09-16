@@ -2,6 +2,7 @@ package api
 
 import (
 	"crypto/rand"
+	"database/sql"
 	internal "dpatrov/scraper/internal"
 	"dpatrov/scraper/internal/db"
 	"dpatrov/scraper/internal/db/repository"
@@ -14,6 +15,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -187,12 +189,12 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 					EditToken: visitorRequest.Token,
 				})
 				// Remove the previous agenda entry if it exists
-				err := services.agendaRepository.Delete(req.Context(), visitorRequest.ID)
+				/*err := services.agendaRepository.Delete(req.Context(), visitorRequest.ID)
 				if err != nil && err != repository.ErrNoAgendaEntryFound {
 					createErrorResponse(writer, "Error while removing linked agenda entry", http.StatusInternalServerError)
 					return
-				}
-				/*agendaEntry, err := services.agendaRepository.FindByID(req.Context(), visitorRequest.ID)
+				}*/
+				agendaEntry, err := services.agendaRepository.FindByID(req.Context(), visitorRequest.ID)
 				if err != nil && err != sql.ErrNoRows {
 					createErrorResponse(writer, "Error while Updating linked agenda entry", http.StatusInternalServerError)
 					return
@@ -205,7 +207,7 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 						createErrorResponse(writer, "Error while Updating linked agenda entry", http.StatusInternalServerError)
 						return
 					}
-				}*/
+				}
 
 			} else { // new
 				submissionParams.Status = "unconfirmed"
@@ -237,6 +239,26 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 		}
 	}
 
+}
+
+func fixPriceValue(submissionData gendb.FormSubmission) (gendb.FormSubmission, error) {
+	var data Record
+	err := json.Unmarshal([]byte(submissionData.Data), &data)
+	if err != nil {
+		return submissionData, err
+	}
+	if price, ok := data["price"]; ok {
+		switch v := price.(type) {
+		case float64:
+			data["price"] = strconv.FormatFloat(v, 'f', 2, 64)
+		}
+	}
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return submissionData, nil
+	}
+	submissionData.Data = string(jsonData)
+	return submissionData, nil
 }
 
 func getAllSubmissions(service *ServiceMiddleWare, writer http.ResponseWriter, req *http.Request) {
@@ -479,6 +501,80 @@ func SubmissionHandler(services *ServiceMiddleWare) func(http.ResponseWriter, *h
 			return
 		default:
 			createErrorResponse(writer, "token is missing", http.StatusBadRequest)
+			return
+		}
+	}
+}
+
+func GetSubmissionDiff(service *ServiceMiddleWare) func(http.ResponseWriter, *http.Request) {
+	return func(writer http.ResponseWriter, req *http.Request) {
+		// 1 get req
+		if req.Method != http.MethodGet {
+			writeJSONResponse(writer, http.StatusMethodNotAllowed, ErrorResponse{
+				Message: "Method not allowed",
+			})
+			return
+		}
+		urlPart := strings.Split(req.URL.Path, "/")
+		if len(urlPart) > 3 {
+			submissionID := urlPart[4]
+			fmt.Printf("submission id:::%s\n", submissionID)
+			agendaEntry, error := service.agendaRepository.FindByID(req.Context(), submissionID)
+			if error != nil {
+				writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
+					Message: "Internal Error",
+				})
+				return
+			}
+
+			submission, error := service.queries.GetSubmissionByID(req.Context(), submissionID)
+			if error != nil {
+				writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
+					Message: "Internal Error",
+				})
+				return
+			}
+			var submissionData db.AgendaEntry
+			submission, err := fixPriceValue(submission)
+			if err != nil {
+				writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
+					Message: "Internal Error",
+				})
+				return
+			}
+			error = json.Unmarshal([]byte(submission.Data), &submissionData)
+			if error != nil {
+				writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
+					Message: "Internal Error",
+				})
+				return
+			}
+			// compare data here
+			// get all keys
+			// loop over key to compares
+			reflectSubmissionData := reflect.ValueOf(submissionData)
+			reflectAgenda := reflect.ValueOf(agendaEntry)
+
+			numField := reflectAgenda.NumField()
+
+			var result map[string]Record
+			result = make(map[string]Record)
+			for i := 0; i < numField; i++ {
+				fieldNameA := reflectSubmissionData.Field(i)
+				fieldNameB := reflectAgenda.Field(i)
+
+				filedName := reflectAgenda.Type().Field(i).Name
+
+				if !reflect.DeepEqual(fieldNameA.Interface(), fieldNameB.Interface()) {
+					result[filedName] = Record{
+						"agenda":     fieldNameA.Interface(),
+						"submission": fieldNameB.Interface(),
+					}
+				}
+			}
+			writeJSONResponse(writer, http.StatusAccepted, OkResponse{
+				Data: result,
+			})
 			return
 		}
 	}

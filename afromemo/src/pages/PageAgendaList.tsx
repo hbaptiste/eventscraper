@@ -434,7 +434,9 @@ const AgendaListView = () => {
                   onMouseLeave={() => setHoveredItemId(null)}
                 >
                   <div
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
                       navigate(`/agenda/${item.id}`);
                     }}
                     className="flex flex-col md:flex-row"

@@ -12,6 +12,10 @@ SELECT *
     FROM form_submissions
     WHERE status='pending' or status='active';
 
+-- name: GetSubmissionByID :one
+SELECT *
+    FROM form_submissions
+    WHERE ID = ?;
 
 
 -- name: UpdateSubmissionStatus :exec
