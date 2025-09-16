@@ -4,15 +4,20 @@ import useAuthStore from "../store/useAuthStore";
 import { LogIn } from "lucide-react";
 
 const LogoutButton = () => {
-  const { logout, token } = useAuthStore();
+  const { logout /*, token*/ } = useAuthStore();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
 
   const doLogout = async () => {
     setIsLoading(true);
-    const API_URL = import.meta.env.VITE_API_URL;
     logout();
-    try {
+    if (window.location.pathname === "/") {
+      window.location.reload();
+    } else {
+      navigate("/");
+    }
+    // const API_URL = import.meta.env.VITE_API_URL;
+    /* try {
       const response = await fetch(API_URL + "/protected/logout", {
         method: "Post",
         headers: {
@@ -26,8 +31,9 @@ const LogoutButton = () => {
     } catch (error) {
       console.error("Logout error", error);
     } finally {
+      logout();
       navigate("/");
-    }
+    }*/
   };
 
   return isLoading ? (
@@ -35,8 +41,8 @@ const LogoutButton = () => {
   ) : (
     <Link
       onClick={doLogout}
-      to="/login"
       className="flex items-center font-medium text-blue-600 dark:text-blue-500 hover:underline"
+      to={""}
     >
       <LogIn className="w-4 h-4 mr-2" />
       Logout

@@ -434,9 +434,7 @@ const AgendaListView = () => {
                   onMouseLeave={() => setHoveredItemId(null)}
                 >
                   <div
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
+                    onClick={() => {
                       navigate(`/agenda/${item.id}`);
                     }}
                     className="flex flex-col md:flex-row"
@@ -613,6 +611,7 @@ const AgendaListView = () => {
                         <div className="flex items-center space-x-4">
                           <Link
                             to={`/agenda/${item.id}`}
+                            onClick={(e) => e.stopPropagation()}
                             state={{ agendaItem: item }}
                             className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                           >
@@ -621,6 +620,7 @@ const AgendaListView = () => {
 
                           {isAdmin && !isFromUser(item) && (
                             <Link
+                              onClick={(e) => e.stopPropagation()}
                               to={`/agenda/${item.id}/edit`}
                               state={{ agendaItem: item }}
                               className="text-blue-600 hover:text-blue-800 text-sm"
@@ -630,6 +630,7 @@ const AgendaListView = () => {
                           )}
                           {isFromUser(item) && !isPublished(item) && (
                             <Link
+                              onClick={(e) => e.stopPropagation()}
                               to={`/agenda/public/${item.token}/validate`}
                               state={{ agendaItem: item }}
                               className="text-blue-600 hover:text-blue-800 font-medium text-sm"
@@ -642,6 +643,7 @@ const AgendaListView = () => {
                         {item.link && (
                           <a
                             href={item.link}
+                            onClick={(e) => e.stopPropagation()}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"

@@ -21,7 +21,6 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   const [creatorEmail, setCreatorEmail] = useState<string>(props.email || "");
 
   const [formData, setFormData] = useState<AgendaItem>(props.agendaItem);
-  console.log("<props>", props);
   // New state for conditional field visibility
   const [showSubtitle, setShowSubtitle] = useState(false);
   const [showEndDate, setShowEndDate] = useState(false);
