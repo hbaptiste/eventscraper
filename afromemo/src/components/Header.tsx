@@ -38,7 +38,7 @@ export default function Header({
               <img
                 src="/logo.jpg"
                 alt="AfroMemo Logo"
-                className="w-10 h-10 sm:w-20 sm:h-20 object-contain"
+                className="w-15 h-15 sm:w-20 sm:h-20 object-contain"
               />
             </Link>
           </div>
@@ -55,11 +55,11 @@ export default function Header({
             to={isAdmin ? "/agenda/create" : "/agenda/public/new"}
             className="afromemo-btn flex !no-underline justify-center items-center sm:text-base bg-blue-500 hover:bg-blue-600 text-white px-1 py-1 md:px-4 md:py-2 rounded"
           >
-            <Plus className="mr-1 text-sm"></Plus>{" "}
+            <Plus className=" text-sm"></Plus>{" "}
             <span className="hidden sm:block">Créer un nouvel événement</span>
           </Link>
 
-          <div role="login_logout">
+          <div role="border login_logout">
             {authInfos && authInfos.isAuthenticated ? (
               <LogoutButton />
             ) : (

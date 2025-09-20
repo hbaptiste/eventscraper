@@ -36,7 +36,7 @@ export const PageSubmissionDeletion = () => {
           Vous êtes sur le point de supprimer votre évenement de notre
           plateforme.
         </p>
-        <a href="#" onClick={onHandleClick}>
+        <a className="text-afm-orange-3" href="#" onClick={onHandleClick}>
           Cliquer ici pour procéder.
         </a>
       </div>

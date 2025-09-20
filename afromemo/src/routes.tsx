@@ -89,7 +89,7 @@ const Routes = [
   },
   {
     name: "PageLoginForm",
-    path: "/login",
+    path: "/login/2025afromemo",
     element: <PageLogin />,
   },
 ];

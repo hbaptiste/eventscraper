@@ -177,7 +177,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
     if (!isValid) {
       return;
     }
-    if (props.displayEmail && !userConditionRef.current?.checked) {
+    if (!isAdmin && !userConditionRef.current?.checked) {
       setErrorMessage(
         "Vous devez confirmer avoir pris connaissance de la charte d'utilisation !"
       );

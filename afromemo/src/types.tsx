@@ -29,17 +29,17 @@ export interface AgendaItem {
   token?: string;
 }
 export enum Places {
-  GENEVE = "Genève",
-  LAUSANNE = "Lausanne",
+  GENEVE = "Grand Genève",
+  LAUSANNE = "Lausanne/Vaud",
   ALTSWISS = "Suisse globale",
   INTERNATIONAL = "International",
 }
 
 export enum Categories {
-  MUSIQUE = "Musique et fêtes",
+  MUSIQUE = "Musiques et fêtes",
   SPECTACLES = "Spectacles",
   EXPOSITIONS = "Expositions",
-  CONFERENCES = "Conférences et mobilisation",
+  CONFERENCES = "Conférences et mobilisations",
   JEUNES = "Jeunes",
   DIVERS = "Divers",
 }

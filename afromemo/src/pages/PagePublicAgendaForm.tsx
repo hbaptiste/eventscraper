@@ -55,11 +55,13 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
 
   const navigate = useNavigate();
   const { setMessage, showMessage } = useMessage();
-  const { enableDiff } = useAuthStore();
+  const { enableDiff, disableDiff } = useAuthStore();
 
   useEffect(() => {
     if (isAdmin) {
       enableDiff();
+    } else {
+      disableDiff();
     }
   }, [isAdmin]);
 

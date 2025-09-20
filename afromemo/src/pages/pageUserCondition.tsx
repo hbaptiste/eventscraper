@@ -28,9 +28,9 @@ const PageUserCondition = () => {
           <li>Musiques et fêtes</li>
           <li>
             Spectacles{" "}
-            <span className="text-xm">
-              (théâtre, danse, comédies-musicales, opéras, performances, cinéma,
-              humour)
+            <span className="text-sm">
+              (théâtre, danse, comédies-musicales, opéras, performances, cinéma
+              et humour)
             </span>
           </li>
           <li>Expositions</li>
