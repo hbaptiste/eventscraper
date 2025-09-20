@@ -670,7 +670,11 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
               type="email"
               className="w-full p-2 border rounded"
               required
-              disabled={(formData.id as string).trim() !== "" ? true : false}
+              disabled={
+                formData?.id && (formData.id as string).trim() !== ""
+                  ? true
+                  : false
+              }
               value={creatorEmail}
               onChange={(e) => setCreatorEmail(e.target.value)}
               onInput={clearValidity}
