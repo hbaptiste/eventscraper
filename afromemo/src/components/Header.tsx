@@ -59,19 +59,19 @@ export default function Header({
             <span className="hidden sm:block">Créer un nouvel événement</span>
           </Link>
 
-          <div role="border login_logout">
-            {authInfos && authInfos.isAuthenticated ? (
+          {authInfos && authInfos.isAuthenticated ? (
+            <div role="border login_logout">
               <LogoutButton />
-            ) : (
-              <Link
-                to="/login"
-                className="hidden flex items-center font-medium !text-afrm-black-1"
-              >
-                <LogIn className="w-4 h-4 mr-2" />
-                login
-              </Link>
-            )}
-          </div>
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="hidden flex items-center font-medium !text-afrm-black-1"
+            >
+              <LogIn className="w-4 h-4 mr-2" />
+              login
+            </Link>
+          )}
         </div>
       </div>
     </header>
