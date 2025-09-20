@@ -5,7 +5,7 @@ const PageUserCondition = () => {
     <div className="px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
       <div className="text-md sm:text-base lg:text-lg font-normal text-justify">
         <h2 className="mb-6 text-4xl font-bold dark:text-white text-center">
-          Charte éditoriale
+          Charte d'utilisation
         </h2>
 
         <p className="mb-3">
@@ -42,7 +42,7 @@ const PageUserCondition = () => {
           </li>
           <li>Jeunes</li>
           <li>
-            Manifestations et autres{" "}
+            Divers{" "}
             <span className="text-sm">
               (festivals, rencontres littéraires, ateliers, etc.)
             </span>
@@ -63,7 +63,12 @@ const PageUserCondition = () => {
               (Genève, Annemasse, Ferney-Voltaire, etc.)
             </span>
           </li>
-          <li>À Lausanne </li>
+          <li>
+            À Lausanne/Vaud{" "}
+            <span className="text-sm">
+              (Lausanne, Vidy, Rivaz, Renens, Nyon, Vevey, etc.)
+            </span>
+          </li>
           <li>
             Dans la Suisse globale{" "}
             <span className="text-sm">
@@ -88,15 +93,16 @@ const PageUserCondition = () => {
         </p>
         <p className="mb-3">
           Le choix est de mettre à disposition une interface avec un formulaire
-          relativement simple à remplir. Si plusieurs horaires s’appliquent à un
-          même événement, ils peuvent figurer dans les informations
-          complémentaires. L’internaute pourra y accéder en cliquant sur “voir
-          détails“.
+          relativement simple à remplir. Si plusieurs{" "}
+          <span className="font-bold">horaires</span> s’appliquent à un même
+          événement, ils peuvent figurer dans les informations complémentaires.
+          L’internaute pourra y accéder en cliquant sur “voir détails“.
         </p>
         <p className="mb-3">
           À noter que la plupart des événements ont un site internet ou une page
           sur un réseau social (Facebook, Instagram, etc.) qu’il est conseillé
-          de consulter grâce au lien nommé “site vers l’événement“.
+          de consulter grâce au lien nommé{" "}
+          <span className="font-bold">site vers l’événement</span>.
         </p>
         <p className="mb-3">
           La mise en ligne des événements est{" "}

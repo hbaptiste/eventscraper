@@ -154,8 +154,8 @@ func (repo *AgendaRepository) FindAll(ctx context.Context, filter Filter) ([]db.
 		)
 
 		if err != nil {
-			fmt.Printf("agenda_repository %v\n", err)
-			return nil, fmt.Errorf("Error while scanning agenda\n")
+			fmt.Printf("HS agenda_repository %v\n", err)
+			return nil, err
 		}
 		if startDate, err := time.Parse(dateLayout, startDateString); err == nil {
 			entry.StartDate = startDate

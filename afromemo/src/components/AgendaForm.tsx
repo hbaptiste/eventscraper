@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
+import useEntryDiff from "../hooks/useEntryDiff";
 import { useMessage } from "../hooks/useMessage";
+import useUserInfos from "../hooks/useUserInfos";
 import useAuthStore from "../store/useAuthStore";
 
 import { AgendaItem, Categories, Places, Status } from "../types";
 import { fetch, formatCurrentDate } from "../utils/main";
+import Diffviewer from "./Diffviewer";
 
 interface AgendaEntryFormProp {
   agendaItem: AgendaItem;
@@ -27,8 +30,13 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
 
   const userConditionRef = useRef<HTMLInputElement>(null);
 
-  // auth
+  // custom hooks
   const { token } = useAuthStore((state: any) => state);
+
+  const { isAdmin } = useUserInfos();
+  const { getFieldDiff } = useEntryDiff(
+    (props?.agendaItem?.id as string) || ""
+  );
 
   // error
   const [, setHasError] = useState<boolean>(false);
@@ -266,6 +274,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
           <label className="block text-gray-700 mb-2" htmlFor="title">
             Titre
           </label>
+          <Diffviewer fieldGetter={getFieldDiff} field="title" />
           <input
             type="text"
             id="title"
@@ -299,6 +308,8 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
               <label className="block text-gray-700 mb-2" htmlFor="subtitle">
                 Sous-titre
               </label>
+              <Diffviewer fieldGetter={getFieldDiff} field="subtitle" />
+
               <input
                 type="text"
                 id="subtitle"
@@ -314,6 +325,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
           <label className="block text-gray-700 mb-2" htmlFor="link">
             Lien
           </label>
+          <Diffviewer fieldGetter={getFieldDiff} field="link" />
           <input
             type="url"
             id="link"
@@ -327,6 +339,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
           <label className="block text-gray-700 mb-2" htmlFor="price">
             Prix
           </label>
+          <Diffviewer fieldGetter={getFieldDiff} field="price" />
           <input
             type="text"
             id="price"
@@ -346,6 +359,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             <label className="block text-gray-700 mb-2" htmlFor="venuename">
               Nom du lieu
             </label>
+            <Diffviewer fieldGetter={getFieldDiff} field="venuename" />
             <input
               type="text"
               id="venuename"
@@ -369,6 +383,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             <label className="block text-gray-700 mb-2" htmlFor="address">
               Adresse
             </label>
+            <Diffviewer fieldGetter={getFieldDiff} field="address" />
             <input
               type="text"
               id="address"
@@ -390,6 +405,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             <label className="block text-gray-700 mb-2" htmlFor="place">
               Région
             </label>
+            <Diffviewer fieldGetter={getFieldDiff} field="place" />
             <select
               id="place"
               name="place"
@@ -419,6 +435,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             <label className="block text-gray-700 mb-2" htmlFor="time">
               Date de début (DD/MM/YYYY)
             </label>
+            <Diffviewer fieldGetter={getFieldDiff} field="time" />
             <input
               type="date"
               id="time"
@@ -450,6 +467,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
                 <label className="block text-gray-700 mb-2" htmlFor="endtime">
                   Date de fin (DD/MM/YYYY)
                 </label>
+                <Diffviewer fieldGetter={getFieldDiff} field="enddate" />
                 <input
                   type="date"
                   id="enddate"
@@ -467,6 +485,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             <label className="block text-gray-700 mb-2" htmlFor="starttime">
               Heure de début
             </label>
+            <Diffviewer fieldGetter={getFieldDiff} field="starttime" />
             <input
               type="time"
               id="starttime"
@@ -488,6 +507,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             <label className="block text-gray-700 mb-2" htmlFor="endtime">
               Heure de fin
             </label>
+            <Diffviewer fieldGetter={getFieldDiff} field="endtime" />
             <input
               type="time"
               id="endtime"
@@ -502,6 +522,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
           <label className="block text-gray-700 mb-2" htmlFor="description">
             Description
           </label>
+          <Diffviewer fieldGetter={getFieldDiff} field="description" />
           <textarea
             id="description"
             name="description"
@@ -514,6 +535,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
           <label className="block text-gray-700 mb-2" htmlFor="infos">
             Info additionnelle
           </label>
+          <Diffviewer fieldGetter={getFieldDiff} field="infos" />
           <textarea
             id="infos"
             name="infos"
@@ -527,6 +549,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
           <label className="block text-gray-700 mb-2" htmlFor="poster">
             Flyer ou Photo
           </label>
+          <Diffviewer fieldGetter={getFieldDiff} field="poster" />
           <input
             type="file"
             id="poster"
@@ -569,6 +592,11 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
           <label className="block text-gray-700 mb-2" htmlFor="category">
             Catégorie
           </label>
+          <Diffviewer
+            className="_hidden"
+            fieldGetter={getFieldDiff}
+            field="category"
+          />
           <select
             id="category"
             name="category"
@@ -596,6 +624,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
           <label className="block text-gray-700 mb-2" htmlFor="tags">
             Tags (séparés par une virgule)
           </label>
+          <Diffviewer fieldGetter={getFieldDiff} field="tags" />
           <input
             type="text"
             id="tags"
@@ -611,7 +640,11 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             <label className="block text-gray-700 mb-2" htmlFor="status">
               Status
             </label>
-
+            <Diffviewer
+              className="hidden"
+              fieldGetter={getFieldDiff}
+              field="status"
+            />
             <select
               id="status"
               name="status"
@@ -630,12 +663,14 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             <label className="block text-gray-700 mb-2" htmlFor="status">
               Email
             </label>
+            <Diffviewer fieldGetter={getFieldDiff} field="email" />
             <input
               id="email"
               name="email"
               type="email"
               className="w-full p-2 border rounded"
               required
+              disabled={(formData.id as string).trim() !== "" ? true : false}
               value={creatorEmail}
               onChange={(e) => setCreatorEmail(e.target.value)}
               onInput={clearValidity}
@@ -648,7 +683,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             />
           </div>
         )}
-        {props.displayEmail && (
+        {!isAdmin && (
           <div className="mb-6">
             <label className="block text-gray-700 mb-2" htmlFor="userCondition">
               Condition d'utilisation

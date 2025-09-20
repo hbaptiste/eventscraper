@@ -266,7 +266,7 @@ const AgendaListView = () => {
       <div className="hidden flex justify-end mb-6 mr-2">
         <Link
           to={isAdmin ? "/agenda/create" : "/agenda/public/new"}
-          className="afromemo-btn flex justify-between bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+          className="afromemo-btn no-underline flex justify-between bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
         >
           <Plus></Plus> Créer un nouvel événement
         </Link>

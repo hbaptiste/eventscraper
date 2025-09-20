@@ -7,14 +7,17 @@ export interface User {
   role: string;
 }
 
-interface AuthState {
+interface AppState {
   authInfos: AuthInfos | null;
   token: string | null;
+  isInit: boolean;
+  diffEnabled: boolean;
   login: (authInfos: AuthInfos) => void;
   logout: () => void;
   setToken: (token: string | null) => void;
-  isInit: boolean;
   init: () => void;
+  disableDiff: () => void;
+  enableDiff: () => void;
 }
 
 export interface AuthInfos {
@@ -23,10 +26,11 @@ export interface AuthInfos {
   token: string | null;
 }
 
-const useAuthStore = create<AuthState>((set, get) => ({
+const useAuthStore = create<AppState>((set, get) => ({
   authInfos: null,
   token: null,
   isInit: false,
+  diffEnabled: false,
   init: () => {
     const currentState = get();
     const localStorageAuthInfos = localStorage.getItem("authInfos");
@@ -58,6 +62,14 @@ const useAuthStore = create<AuthState>((set, get) => ({
       localStorage.setItem("authInfos", JSON.stringify(authInfos));
     }
     set({ token });
+  },
+
+  disableDiff: () => {
+    set({ diffEnabled: false });
+  },
+
+  enableDiff: () => {
+    set({ diffEnabled: true });
   },
 }));
 

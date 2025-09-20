@@ -30,7 +30,7 @@ export default function PageAgendaItemDetailView() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   if (!itemId) {
-    return <div className="not-found">Aucun événement pour l'instant !</div>; // Handle case where event is not found
+    return <div className="not-found">Aucun événement trouvé !</div>; // Handle case where event is not found
   }
   // If no item is provided, use sample data
   const BACKEND_IMAGE_URL = import.meta.env.VITE_BACKEND_IMAGE_PATH;
@@ -45,14 +45,18 @@ export default function PageAgendaItemDetailView() {
   useEffect(() => {
     if (!agendaItem && itemId) {
       const loadItem = async () => {
-        const response = await fetch(`/api/agenda/${itemId}`, {});
-        const data = await response.json();
-        if (!response.ok) {
+        try {
+          const response = await fetch(`/api/agenda/${itemId}`, {});
+          const data = await response.json();
+          if (!response.ok) {
+            setIsLoading(false);
+            setMessage("Error: Une erreur s'est produite!");
+          } else {
+            setIsLoading(false);
+            setAgendaItem(data);
+          }
+        } catch (e) {
           setIsLoading(false);
-          setMessage("Error: Une erreur s'est produite!");
-        } else {
-          setIsLoading(false);
-          setAgendaItem(data);
         }
       };
       loadItem();
@@ -237,14 +241,16 @@ export default function PageAgendaItemDetailView() {
                 }}
                 className="bg-afrm-black-1 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg flex-1 flex justify-center items-center"
               >
-                <Calendar className="mr-2" _size={18} />
+                <Calendar className="mr-2" size={16} />
                 Ajouter à votre calendrier
               </button>
             </div>
           </div>
         </>
       )}
-      {!isLoading && !agendaItem && <p>L'évenement n'a pas été trouvé!</p>}
+      {!isLoading && !agendaItem && (
+        <p className="p-5">L'évenement n'a pas été trouvé!</p>
+      )}
     </div>
   );
 }

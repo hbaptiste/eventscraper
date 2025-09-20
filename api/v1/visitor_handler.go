@@ -11,6 +11,7 @@ import (
 	"dpatrov/scraper/internal/validators"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -519,31 +520,40 @@ func GetSubmissionDiff(service *ServiceMiddleWare) func(http.ResponseWriter, *ht
 		if len(urlPart) > 3 {
 			submissionID := urlPart[4]
 			fmt.Printf("submission id:::%s\n", submissionID)
-			agendaEntry, error := service.agendaRepository.FindByID(req.Context(), submissionID)
-			if error != nil {
-				writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
-					Message: "Internal Error",
-				})
-				return
+			agendaEntry, err := service.agendaRepository.FindByID(req.Context(), submissionID)
+
+			if err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
+					result := make(map[string]Record)
+					writeJSONResponse(writer, http.StatusAccepted, OkResponse{
+						Data: result,
+					})
+					return
+				} else {
+					writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
+						Message: "Internal Error",
+					})
+					return
+				}
 			}
 
-			submission, error := service.queries.GetSubmissionByID(req.Context(), submissionID)
-			if error != nil {
-				writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
-					Message: "Internal Error",
-				})
-				return
-			}
-			var submissionData db.AgendaEntry
-			submission, err := fixPriceValue(submission)
+			submission, err := service.queries.GetSubmissionByID(req.Context(), submissionID)
 			if err != nil {
 				writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
 					Message: "Internal Error",
 				})
 				return
 			}
-			error = json.Unmarshal([]byte(submission.Data), &submissionData)
-			if error != nil {
+			var submissionData db.AgendaEntry
+			submission, err = fixPriceValue(submission)
+			if err != nil {
+				writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
+					Message: "Internal Error",
+				})
+				return
+			}
+			err = json.Unmarshal([]byte(submission.Data), &submissionData)
+			if err != nil {
 				writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
 					Message: "Internal Error",
 				})
@@ -563,12 +573,14 @@ func GetSubmissionDiff(service *ServiceMiddleWare) func(http.ResponseWriter, *ht
 				fieldNameA := reflectSubmissionData.Field(i)
 				fieldNameB := reflectAgenda.Field(i)
 
-				filedName := reflectAgenda.Type().Field(i).Name
+				fieldName := reflectAgenda.Type().Field(i).Name
+				fieldName = strings.ToLower(fieldName)
 
 				if !reflect.DeepEqual(fieldNameA.Interface(), fieldNameB.Interface()) {
-					result[filedName] = Record{
-						"agenda":     fieldNameA.Interface(),
-						"submission": fieldNameB.Interface(),
+
+					result[fieldName] = Record{
+						"old": fieldNameB.Interface(),
+						"new": fieldNameA.Interface(),
 					}
 				}
 			}

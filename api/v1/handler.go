@@ -854,13 +854,20 @@ func AdminActionHandler(service *ServiceMiddleWare) HandlerFunc {
 				writeJSONResponse(writer, http.StatusUnprocessableEntity, ErrorResponse{Message: err.Error()})
 				return
 			}
-			_, err = service.agendaRepository.Create(req.Context(), &agendaEntry)
-			if err != nil {
-				fmt.Printf("error::createAgendaEntry %v", err)
-				writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
-					Message: err.Error(),
-				})
-				return
+			// We try to find the agenda item
+			agenda, err := service.agendaRepository.FindByID(req.Context(), formSubmission.ID)
+			if !agenda.IsZero() {
+				service.agendaRepository.Update(req.Context(), agendaEntry)
+			} else {
+				// Create a new agenda entry
+				_, err = service.agendaRepository.Create(req.Context(), &agendaEntry)
+				if err != nil {
+					fmt.Printf("error::createAgendaEntry %v", err)
+					writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
+						Message: err.Error(),
+					})
+					return
+				}
 			}
 			service.queries.UpdateSubmissionStatus(req.Context(), gendb.UpdateSubmissionStatusParams{
 				Status:    "active",
@@ -960,6 +967,7 @@ func StartApiServer(portNumber int) {
 	mux.HandleFunc("/api/submissions/", withCORS(SubmissionHandler(serviceMiddleWare)))
 	mux.HandleFunc("/api/submissions", withCORS(HandlerVisitorForm(serviceMiddleWare)))
 
+	// [token] e74341c8-a7ab-40ed-b404-38e6406e3249
 	// to remove
 	mux.HandleFunc("/api/upload", withCORS(uploadHandler))
 

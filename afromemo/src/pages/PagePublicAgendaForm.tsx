@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import AgendaEntryForm from "../components/AgendaForm";
 import { useMessage } from "../hooks/useMessage";
 import useUserInfos from "../hooks/useUserInfos";
+import useAuthStore from "../store/useAuthStore";
 
 import { AgendaItem, Status, UserSubmission } from "../types";
 import { fetch, formatCurrentDate } from "../utils/main";
@@ -54,6 +55,13 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
 
   const navigate = useNavigate();
   const { setMessage, showMessage } = useMessage();
+  const { enableDiff } = useAuthStore();
+
+  useEffect(() => {
+    if (isAdmin) {
+      enableDiff();
+    }
+  }, [isAdmin]);
 
   const getCRSToken = async () => {
     const response = await fetch("/api/csrfToken", {
@@ -130,6 +138,7 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
 
     formData.tags = Array.isArray(formData.tags) ? formData.tags : [];
     formData.email = email;
+    formData.id = id;
     setFormData(formData);
     setEmail(email);
     setSubmissionID(id);
@@ -182,7 +191,9 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
             </div>
           )}
 
-          <a href="/">Voir la liste des événements.</a>
+          <a className="mt-1 block text-afrm-orange-3" href="/">
+            Voir la liste des événements.
+          </a>
         </div>
       )}
     </div>

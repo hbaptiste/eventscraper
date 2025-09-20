@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import AgendaEntryForm from "../components/AgendaForm";
 
@@ -8,15 +8,24 @@ import useUserInfos from "../hooks/useUserInfos";
 
 import { fetch, formatCurrentDate } from "../utils/main";
 import { useMessage } from "../hooks/useMessage";
+import useAuthStore from "../store/useAuthStore";
 
 const PageAgendaEntryForm: React.FC = (): React.ReactElement => {
   const location = useLocation();
-  const { token } = useUserInfos();
+  const { token, isAdmin } = useUserInfos();
   const { setMessage } = useMessage();
   const navigate = useNavigate();
 
   const { itemId } = useParams<{ itemId: string }>();
   const agendaItem = location.state?.agendaItem as AgendaItem;
+
+  const { disableDiff } = useAuthStore();
+
+  useEffect(() => {
+    if (isAdmin) {
+      disableDiff();
+    }
+  }, [isAdmin]);
 
   const emptyAgendaItem: AgendaItem = {
     title: "",
