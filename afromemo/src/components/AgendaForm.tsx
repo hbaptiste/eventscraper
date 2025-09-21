@@ -708,7 +708,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
                 >
                   charte d'utilisation
                 </a>{" "}
-                d'Afromemo
+                de AFROMEMO.CH
               </p>
             </div>
           </div>

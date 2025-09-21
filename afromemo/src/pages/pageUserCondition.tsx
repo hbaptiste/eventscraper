@@ -35,7 +35,7 @@ const PageUserCondition = () => {
           </li>
           <li>Expositions</li>
           <li>
-            Conférences et mobilisation{" "}
+            Conférences et mobilisations{" "}
             <span className="text-sm">
               (rencontres, engagements, luttes, militantisme, etc.)
             </span>
@@ -108,7 +108,8 @@ const PageUserCondition = () => {
           La mise en ligne des événements est{" "}
           <strong>validée dans les 3 jours</strong>. Ceci afin d’éviter les
           propos haineux, discriminatoires, sexistes et bien sûr racistes qui ne
-          sont pas acceptés.
+          sont pas acceptés. Par ailleurs, exceptionnellement, au niveau
+          rédactionnel une modification pourra être faite.
         </p>
         <p className="mb-3">
           Concernant les autres aspects,{" "}
