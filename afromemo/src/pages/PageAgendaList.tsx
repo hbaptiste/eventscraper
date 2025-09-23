@@ -257,7 +257,7 @@ const AgendaListView = () => {
       }),
     });
     if (response.status == 401) {
-      navigate("/login");
+      navigate("/");
     }
   };
 

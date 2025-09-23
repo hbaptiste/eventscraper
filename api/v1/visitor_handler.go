@@ -202,7 +202,7 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 				} else if agendaEntry.ID != "" {
 
 					// linked agenda exists, put it offline
-					err := services.agendaRepository.UpdateStatus(agendaEntry.ID, int(db.Status_Pending))
+					err := services.agendaRepository.UpdateStatus(agendaEntry.ID, int(db.Status_Unlinked))
 					if err != nil {
 						fmt.Printf("<error>%v", err)
 						createErrorResponse(writer, "Error while Updating linked agenda entry", http.StatusInternalServerError)

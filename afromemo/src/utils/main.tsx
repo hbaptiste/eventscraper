@@ -123,8 +123,7 @@ export const getPlace = (key: Places): string => {
 
 export const getCategory = (key: string): string => {
   return (
-    Categories[key.toUpperCase() as unknown as keyof typeof Categories] ||
-    "Divers"
+    Categories[key.toUpperCase() as unknown as keyof typeof Categories] || ""
   );
 };
 
@@ -172,7 +171,7 @@ const onAuthError = async (params: {
     };
     return await fetch(url, options);
   } catch (e) {
-    location.href = "/login";
+    location.href = "/";
   }
 };
 

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"strings"
 	"time"
 
@@ -109,11 +110,16 @@ func (repo *AgendaRepository) FindAll(ctx context.Context, filter Filter) ([]db.
 
 	if filter != nil {
 		if status, exists := filter["status"]; exists {
-			criteria = append(criteria, fmt.Sprintf("status=%d", status))
+			if status == -int(db.Status_Unlinked) {
+				criteria = append(criteria, fmt.Sprintf("status!=%d", int(math.Abs(float64(status)))))
+			} else {
+				criteria = append(criteria, fmt.Sprintf("status=%d", status))
+			}
 		}
 		if owner, exists := filter["owner"]; exists {
 			criteria = append(criteria, fmt.Sprintf("owner=%d", owner))
 		}
+		fmt.Printf("%s", criteria)
 	}
 	query += strings.Join(criteria, " AND ")
 	query += " ORDER BY startdate ASC;"

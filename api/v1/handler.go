@@ -516,7 +516,7 @@ func getAllEvents(resp http.ResponseWriter, req *http.Request) {
 			return
 		}
 		if user.IsAdmin() {
-			queryFilter = nil // return everything
+			queryFilter["status"] = -int(db.Status_Unlinked)
 		} else {
 			queryFilter["owner"] = userId.(int)
 		}
@@ -837,7 +837,7 @@ func AdminActionHandler(service *ServiceMiddleWare) HandlerFunc {
 			agendaEntry := actionRequest.FormData
 			issues := validators.AgendaEntrySchema.Validate(&agendaEntry)
 			if issues != nil {
-				log.Printf("%v", issues)
+				log.Printf("Validation error: %v", issues)
 				writeJSONResponse(writer, http.StatusUnprocessableEntity, ErrorResponse{Message: "Form is not valid"})
 				return
 			}
@@ -847,16 +847,18 @@ func AdminActionHandler(service *ServiceMiddleWare) HandlerFunc {
 			agendaEntry.ID = formSubmission.ID
 			agendaEntry.Status = db.Status_Active
 
-			// We update submission status with the updated data
+			// We update the submission status with the updated data
 			agendaEntryData, err := json.Marshal(agendaEntry)
 			if err != nil {
-				log.Printf("%v", err)
+				log.Printf("Error: %v", err)
 				writeJSONResponse(writer, http.StatusUnprocessableEntity, ErrorResponse{Message: err.Error()})
 				return
 			}
 			// We try to find the agenda item
 			agenda, err := service.agendaRepository.FindByID(req.Context(), formSubmission.ID)
-			if !agenda.IsZero() {
+
+			if !agenda.IsZero() && agenda.ID != "" {
+				fmt.Printf("linked Agenda found %s \n", agenda.ID)
 				service.agendaRepository.Update(req.Context(), agendaEntry)
 			} else {
 				// Create a new agenda entry
