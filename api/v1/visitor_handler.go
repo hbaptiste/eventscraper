@@ -344,7 +344,7 @@ func deleteSubmission(services *ServiceMiddleWare, writer http.ResponseWriter, r
 		EditToken: submission.EditToken,
 	})
 	// deleted linked agenda
-	err = services.agendaRepository.Delete(req.Context(), submission.ID)
+	err = services.agendaRepository.UpdateStatus(submission.ID, int(db.Status_Deleted))
 	if err != nil && err != repository.ErrNoAgendaEntryFound {
 		createErrorResponse(writer, "Error while removing linked agenda entry", http.StatusInternalServerError)
 		return

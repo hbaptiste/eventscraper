@@ -3,6 +3,7 @@ export enum Status {
   ACTIVE = 1,
   PENDING = 2,
   DELETED = 3,
+  ARCHIVED = 5,
 }
 
 export interface AgendaItem {

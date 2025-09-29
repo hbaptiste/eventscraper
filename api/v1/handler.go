@@ -937,13 +937,19 @@ func StartApiServer(portNumber int) {
 	// init DB
 	localDb := db.InitDb() // change to command
 
+	// Start agenda Archiver
+
 	// Handle Migration
 	db.ApplyMigration(localDb)
+
+	ea := utils.NewEventArchiver(localDb, time.Hour*24)
+	ea.Start(context.Background())
 
 	serviceMiddleWare := NewServiceMiddleWare(localDb)
 	agendaHandler := serviceMiddleWare.Handler(agendaHandler)
 	loginHandler := withCORS(loginWithServices(serviceMiddleWare))
 
+	// start the arch
 	//refresh token handler
 	refreshTokenHandler := withCORS(refeshTokenWithServices(serviceMiddleWare))
 

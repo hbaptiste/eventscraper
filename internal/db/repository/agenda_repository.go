@@ -81,7 +81,7 @@ func (repo *AgendaRepository) FindAll(ctx context.Context, filter Filter) ([]db.
 	var entries []db.AgendaEntry
 
 	var criteria []string
-	criteria = append(criteria, "AND 1=1")
+	criteria = append(criteria, "WHERE 1=1")
 
 	query := `SELECT 
 				id, 
@@ -104,14 +104,18 @@ func (repo *AgendaRepository) FindAll(ctx context.Context, filter Filter) ([]db.
 				enddate,
 				venuename
 			FROM agenda_entry
-			WHERE enddate >= date('now', '-7 days')
 			`
 	// apply filter
+	//WHERE enddate >= date('now', '-7 days')
 
 	if filter != nil {
 		if status, exists := filter["status"]; exists {
 			if status == -int(db.Status_Unlinked) {
+				// activeStatus := fmt.Sprintf("%d%d", db.Status_Active, db.Status_Archived)
+				// statusCode, _ := strconv.Atoi(activeStatus)
 				criteria = append(criteria, fmt.Sprintf("status!=%d", int(math.Abs(float64(status)))))
+			} else if status == int(db.Status_Active) {
+				criteria = append(criteria, fmt.Sprintf("status=%d OR status=%d", status, db.Status_Deleted))
 			} else {
 				criteria = append(criteria, fmt.Sprintf("status=%d", status))
 			}
@@ -119,7 +123,7 @@ func (repo *AgendaRepository) FindAll(ctx context.Context, filter Filter) ([]db.
 		if owner, exists := filter["owner"]; exists {
 			criteria = append(criteria, fmt.Sprintf("owner=%d", owner))
 		}
-		fmt.Printf("%s", criteria)
+		fmt.Printf("Criteria:: %s \n", criteria)
 	}
 	query += strings.Join(criteria, " AND ")
 	query += " ORDER BY startdate ASC;"

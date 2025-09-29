@@ -232,6 +232,11 @@ const AgendaListView = () => {
   const isFromUser = (item: AgendaItem): boolean => {
     return item?.userSubmission as unknown as boolean;
   };
+
+  const isEditable = (item: AgendaItem): boolean => {
+    return item.status == Status.DELETED || item.status == Status.ARCHIVED;
+  };
+
   const isPublished = (item: AgendaItem): boolean => {
     return item.status == Status.ACTIVE;
   };
@@ -263,26 +268,6 @@ const AgendaListView = () => {
 
   return (
     <div className="w-full container mx-auto mb-6">
-      <div className="hidden flex justify-end mb-6 mr-2">
-        <Link
-          to={isAdmin ? "/agenda/create" : "/agenda/public/new"}
-          className="afromemo-btn no-underline flex justify-between bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          <Plus></Plus> Créer un nouvel événement
-        </Link>
-      </div>
-      <div className="hidden flex flex-row gap-5 justify-between colorContainer">
-        <div className="bg-afrm-black-1 p-5 w-50">afrm-black-1</div>
-        <div className="bg-afrm-black-2 p-5 w-50">afrm-black-2</div>
-        <div className="bg-afrm-orange-1 p-5 w-50">afrm-orange-1</div>
-        <div className="bg-afrm-orange-2 p-5 w-50">afrm-orange-2</div>
-        <div className="bg-afrm-orange-3 p-5 w-50">afrm-orange-3</div>
-
-        <div className="bg-afrm-yellow-1 p-5 w-50">f</div>
-        <div className="bg-afrm-yellow-2 p-5 w-50">f</div>
-        <div className="bg-afrm-yellow-3 p-5 w-50">f</div>
-      </div>
-
       {/* Filters */}
       <div className="bg-white p-2 rounded shadow mb-2">
         <div className="flex justify-center text-sm gap-1 lg:gap-5 cursor-pointer lg:text-lg  lg:mt-3 lg:mb-3">
@@ -383,7 +368,10 @@ const AgendaListView = () => {
               {filteredItems.length} sur {total} items
             </p>
             {isAdmin && (
-              <div className="flex items-center gap-5 h-5">
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-5 h-5"
+              >
                 <div className="flex items-center gap-5 status-filter">
                   <label
                     htmlFor="status"
@@ -402,6 +390,7 @@ const AgendaListView = () => {
                     <option value={Status.ACTIVE}>Actif</option>
                     <option value={Status.INACTIVE}>Inactif</option>
                     <option value={Status.PENDING}>En attente</option>
+                    <option value={Status.ARCHIVED}>Archivé</option>
                   </select>
                 </div>
                 <div className="flex gap-2 accent-afrm-orange-3">
@@ -454,15 +443,20 @@ const AgendaListView = () => {
                           !isFromUser(item) &&
                           hoveredItemId &&
                           hoveredItemId == (item.id as string) && (
-                            <div className="absolute top-2 right-2 bg-white rounded-md shadow-lg p-1 z-10">
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute top-2 right-2 bg-white rounded-md shadow-lg p-1 z-10"
+                            >
                               <select
                                 value={item.status}
-                                onChange={(e) =>
+                                onChange={(e) => {
+                                  e.stopPropagation();
                                   handleChangeStatus(
                                     item.id as string,
                                     e.target.value as unknown as Status
-                                  )
-                                }
+                                  );
+                                  return false;
+                                }}
                                 className="text-xs p-1 rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                               >
                                 <option value={Status.PENDING}>Pending</option>
@@ -470,6 +464,7 @@ const AgendaListView = () => {
                                 <option value={Status.INACTIVE}>
                                   Inactive
                                 </option>
+                                <option value={Status.DELETED}>Annulé</option>
                               </select>
                             </div>
                           )}
@@ -485,6 +480,11 @@ const AgendaListView = () => {
                           {item.status === Status.INACTIVE && (
                             <span className="ml-2 text-red-500 text-sm font-normal">
                               (Désactivé)
+                            </span>
+                          )}
+                          {item.status === Status.DELETED && (
+                            <span className="ml-2 text-red-500 text-sm font-normal">
+                              (Annulé)
                             </span>
                           )}
                         </h2>
@@ -618,16 +618,18 @@ const AgendaListView = () => {
                             Voir détails
                           </Link>
 
-                          {isAdmin && !isFromUser(item) && (
-                            <Link
-                              onClick={(e) => e.stopPropagation()}
-                              to={`/agenda/${item.id}/edit`}
-                              state={{ agendaItem: item }}
-                              className="text-blue-600 hover:text-blue-800 text-sm"
-                            >
-                              Éditer
-                            </Link>
-                          )}
+                          {isAdmin &&
+                            !isFromUser(item) &&
+                            !isEditable(item) && (
+                              <Link
+                                onClick={(e) => e.stopPropagation()}
+                                to={`/agenda/${item.id}/edit`}
+                                state={{ agendaItem: item }}
+                                className="text-blue-600 hover:text-blue-800 text-sm"
+                              >
+                                Éditer
+                              </Link>
+                            )}
                           {isFromUser(item) && !isPublished(item) && (
                             <Link
                               onClick={(e) => e.stopPropagation()}
