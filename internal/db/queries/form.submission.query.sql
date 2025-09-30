@@ -10,7 +10,7 @@ SELECT id, email, data, edit_token, cancel_token, confirmation_token, created_at
 -- name: GetSubmissions :many
 SELECT * 
     FROM form_submissions
-    WHERE status='pending' or status='active';
+    WHERE status='pending' or status='active' or status='archived';
 
 -- name: GetSubmissionByID :one
 SELECT *
@@ -30,4 +30,9 @@ UPDATE form_submissions
 
 -- name: CleanupOldSubmission :exec
 DELETE FROM form_submissions 
-    WHERE created_at < datetime('now', '-30 days')
+    WHERE created_at < datetime('now', '-30 days');
+
+-- name: UpdateStatusByID :exec
+UPDATE form_submissions 
+    SET status = ?
+    WHERE ID = ?;

@@ -140,7 +140,7 @@ func (q *Queries) GetSubmissionByToken(ctx context.Context, arg GetSubmissionByT
 const getSubmissions = `-- name: GetSubmissions :many
 SELECT id, email, data, edit_token, cancel_token, created_at, updated_at, status, expired_at, confirmation_token 
     FROM form_submissions
-    WHERE status='pending' or status='active'
+    WHERE status='pending' or status='active' or status='archived'
 `
 
 func (q *Queries) GetSubmissions(ctx context.Context) ([]FormSubmission, error) {
@@ -175,6 +175,22 @@ func (q *Queries) GetSubmissions(ctx context.Context) ([]FormSubmission, error) 
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateStatusByID = `-- name: UpdateStatusByID :exec
+UPDATE form_submissions 
+    SET status = ?
+    WHERE ID = ?
+`
+
+type UpdateStatusByIDParams struct {
+	Status string
+	ID     string
+}
+
+func (q *Queries) UpdateStatusByID(ctx context.Context, arg UpdateStatusByIDParams) error {
+	_, err := q.db.ExecContext(ctx, updateStatusByID, arg.Status, arg.ID)
+	return err
 }
 
 const updateSubmissionStatus = `-- name: UpdateSubmissionStatus :exec

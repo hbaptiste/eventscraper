@@ -9,7 +9,6 @@ import {
   UserSubmission,
   Categories,
 } from "../types";
-import { Plus } from "lucide-react";
 import { fetch, formatDateRange, getPlace } from "../utils/main";
 
 const AgendaListView = () => {
@@ -126,8 +125,21 @@ const AgendaListView = () => {
         formData["id"] = id;
         formData["userSubmission"] = true;
         formData["token"] = token;
-        formData["status"] =
-          status == "active" ? Status.ACTIVE : Status.PENDING;
+        // handle status - deleted
+        switch (status) {
+          case "active":
+            formData["status"] = Status.ACTIVE;
+            break;
+          case "archived":
+            formData["status"] = Status.ARCHIVED;
+            break;
+          case "deleted":
+            formData["status"] = Status.DELETED;
+            break;
+          default:
+            formData["status"] = Status.PENDING;
+            break;
+        }
         return { ...formData };
       })
       .filter((item: { email: string }) => item.email != "");
@@ -187,6 +199,10 @@ const AgendaListView = () => {
     }
     let canFetch = true;
     if (filter.userSubmitted == true) {
+      setFilter((prev) => {
+        return { ...prev, status: Status.PENDING as unknown as string };
+      });
+
       if (canFetch) {
         fetchUserSubmissions();
         setUserSubmissionIsLoaded(true);
@@ -237,17 +253,17 @@ const AgendaListView = () => {
     return item.status == Status.DELETED || item.status == Status.ARCHIVED;
   };
 
-  const isPublished = (item: AgendaItem): boolean => {
-    return item.status == Status.ACTIVE;
+  const isPublishable = (item: AgendaItem): boolean => {
+    return item.status != Status.ACTIVE && item.status != Status.ARCHIVED;
   };
 
   const handleChangeStatus = async (itemId: string, status: Status) => {
-    // Optimistic update
-    setFilteredItems((prevItems) =>
-      prevItems.map((item) =>
+    // Optimistic update test why it's not working
+    setFilteredItems((prevItems) => {
+      return prevItems.map((item) =>
         item.id === itemId ? { ...item, status: status } : item
-      )
-    );
+      );
+    });
 
     // Partial update here
     const response = await fetch(`${API_URL}/agenda/${itemId}`, {
@@ -630,7 +646,7 @@ const AgendaListView = () => {
                                 Éditer
                               </Link>
                             )}
-                          {isFromUser(item) && !isPublished(item) && (
+                          {isFromUser(item) && isPublishable(item) && (
                             <Link
                               onClick={(e) => e.stopPropagation()}
                               to={`/agenda/public/${item.token}/validate`}

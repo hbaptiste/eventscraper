@@ -271,6 +271,7 @@ func getAllSubmissions(service *ServiceMiddleWare, writer http.ResponseWriter, r
 		})
 		return
 	}
+	fmt.Println("Nombre de soumissions::%d", len(submissions))
 	response := make([]VisitorFormRequest, len(submissions))
 
 	for _, submission := range submissions {

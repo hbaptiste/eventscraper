@@ -3,7 +3,10 @@ package utils
 import (
 	"context"
 	"database/sql"
+	internal "dpatrov/scraper/internal"
+	"dpatrov/scraper/internal/db"
 	"dpatrov/scraper/internal/gendb"
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -40,11 +43,12 @@ func (ea *EventArchiver) run(ctx context.Context) {
 
 	initialDelay := timeUntilMidnight()
 	log.Printf("Agenda archiver will start at next midnight (in %v)", initialDelay)
-	firstTimer := time.NewTicker(initialDelay)
+	firstTimer := time.NewTimer(initialDelay)
 	defer firstTimer.Stop()
 
 	// run on start
 	ea.archivePastEvents(ctx)
+	ea.archivePastSubmissions(ctx)
 	// Will wait until midnight
 	select {
 	case <-ctx.Done():
@@ -52,6 +56,7 @@ func (ea *EventArchiver) run(ctx context.Context) {
 		return
 	case <-firstTimer.C:
 		ea.archivePastEvents(ctx)
+		ea.archivePastSubmissions(ctx)
 	}
 	// reset timer from now on
 	ticker := time.NewTicker(ea.interval)
@@ -64,9 +69,11 @@ func (ea *EventArchiver) run(ctx context.Context) {
 			return
 		case <-ticker.C:
 			ea.archivePastEvents(ctx)
+			ea.archivePastSubmissions(ctx)
 		}
 	}
 }
+
 func (ea *EventArchiver) archivePastEvents(ctx context.Context) {
 	now := time.Now()
 	log.Printf("Starting archive process at %s", now)
@@ -75,4 +82,43 @@ func (ea *EventArchiver) archivePastEvents(ctx context.Context) {
 		fmt.Printf("error %v", err)
 	}
 	log.Printf("Ending archive process at %s", time.Now())
+
+}
+
+func (ea *EventArchiver) archivePastSubmissions(ctx context.Context) {
+	log.Printf("Start Submission process as %s", time.Now())
+
+	submissions, err := ea.queries.GetSubmissions(ctx)
+	if err != nil {
+		fmt.Sprintf("%d", err)
+		return
+	}
+
+	for _, submission := range submissions {
+		// Agenda Entry
+		var agendaEntry db.AgendaEntry
+		err := internal.FixPriceValue(&submission)
+		if err != nil {
+			fmt.Sprintf("FixPriceValue::Error %v", err)
+			fmt.Println(err)
+			return
+		}
+		err = json.Unmarshal([]byte(submission.Data), &agendaEntry)
+		if err != nil {
+			fmt.Sprintf("Unmarshal::Error %v", err)
+			fmt.Println(err)
+			return
+		}
+		// If submission is canceled or agendaEntry is end
+		if agendaEntry.EndDate.Add(time.Hour * 24).Before(time.Now()) {
+			err := ea.queries.UpdateStatusByID(ctx, gendb.UpdateStatusByIDParams{
+				ID:     submission.ID,
+				Status: "archived",
+			})
+			if err != nil {
+				fmt.Sprintf("UpdateStatusByID:error %v", err)
+			}
+		}
+	}
+
 }
