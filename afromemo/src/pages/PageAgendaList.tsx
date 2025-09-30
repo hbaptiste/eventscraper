@@ -23,7 +23,7 @@ const AgendaListView = () => {
 
   const [filter, setFilter] = useState({
     category: "",
-    status: "",
+    status: Status.ACTIVE,
     searchTerm: "",
     place: "",
     userSubmitted: false, // Add this
