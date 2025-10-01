@@ -23,7 +23,8 @@ const AgendaListView = () => {
 
   const [filter, setFilter] = useState({
     category: "",
-    status: Status.ACTIVE,
+    status: Status.ACTIVE as unknown as string,
+
     searchTerm: "",
     place: "",
     userSubmitted: false, // Add this
@@ -155,6 +156,7 @@ const AgendaListView = () => {
 
       // Filter by status if specified
       if (filter.status && item.status !== parseInt(filter.status)) {
+        if (!isAdmin && item.status == Status.DELETED) return true;
         return false;
       }
 
