@@ -570,6 +570,7 @@ func agendaStatusHandler(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	writeJSONResponse(resp, http.StatusAccepted, OkResponse{
+		Success: true,
 		Message: "Status updated",
 	})
 	log.Printf("Status update for entry %s!", statusRequest)
@@ -631,12 +632,14 @@ func agendaHandler(resp http.ResponseWriter, req *http.Request) {
 				agendaRepo, err := GetRepository[repository.AgendaRepository](req.Context(), agendaRepoKey)
 				if err != nil {
 					http.Error(resp, "Fail to get agenda repository", http.StatusInternalServerError)
+					return
 				}
 				agendaEntry, err := agendaRepo.FindByID(req.Context(), agendaID)
 				if err != nil {
 					writeJSONResponse(resp, http.StatusInternalServerError, ErrorResponse{
 						Message: err.Error(),
 					})
+					return
 				}
 
 				dataJSON, err := agendaEntry.ToJSON()
@@ -674,7 +677,6 @@ func agendaHandler(resp http.ResponseWriter, req *http.Request) {
 	case http.MethodPut:
 		var agendaEntry db.AgendaEntry
 		err := json.NewDecoder(req.Body).Decode(&agendaEntry)
-		fmt.Printf("recieved data %+v", agendaEntry)
 
 		if err != nil {
 			log.Printf("error %v", err)
@@ -727,7 +729,6 @@ func taskHandler(resp http.ResponseWriter, req *http.Request) {
 }
 
 func healthHandler(resp http.ResponseWriter, req *http.Request) {
-	fmt.Printf("You better know what's going on...")
 	ctx := req.Context()
 	idUser := ctx.Value(userIDKey)
 	if idUser != nil {

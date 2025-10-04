@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import useAuthStore from "../store/useAuthStore";
 
 const useUserInfos = () => {
-  const { authInfos, token } = useAuthStore();
+  const { authInfos, isInit, token } = useAuthStore();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
+    if (!isInit) return;
     if (authInfos) {
       const { role } = authInfos.user;
       if (role && role.split(",").includes("adm")) {
@@ -16,7 +17,7 @@ const useUserInfos = () => {
     } else {
       setIsAdmin(false);
     }
-  }, [authInfos]);
+  }, [authInfos, isInit]);
 
   return { isAdmin, token };
 };

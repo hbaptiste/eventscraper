@@ -27,7 +27,6 @@ function LoginForm() {
     }
     try {
       const response = await doLogin(username, password);
-      console.log(response);
       if (response && response.token) {
         // Load the user
         setToken(response.token);

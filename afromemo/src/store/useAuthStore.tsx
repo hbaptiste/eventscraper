@@ -32,23 +32,27 @@ const useAuthStore = create<AppState>((set, get) => ({
   isInit: false,
   diffEnabled: false,
   init: () => {
-    const currentState = get();
-    const localStorageAuthInfos = localStorage.getItem("authInfos");
-    if (localStorageAuthInfos) {
+    const localStorageAuthInfos =
+      localStorage.getItem("authInfos") == "null"
+        ? null
+        : localStorage.getItem("authInfos");
+    if (localStorageAuthInfos !== null) {
       try {
         const authInfos = JSON.parse(localStorageAuthInfos);
-        if (authInfos && !currentState.isInit) {
+        if (authInfos) {
           authInfos.isAuthenticated = true;
           set({ authInfos: authInfos, token: authInfos.token, isInit: true });
         }
       } catch (e) {}
+    } else {
+      set({ isInit: true });
     }
   },
   login: (authInfos: AuthInfos) => {
     // Save the user information to local storage
     authInfos.isAuthenticated = true;
     localStorage.setItem("authInfos", JSON.stringify(authInfos));
-    set({ authInfos, token: authInfos.token });
+    set({ authInfos, token: authInfos.token, isInit: true });
   },
   logout: () => {
     // Remove the user information from local storage

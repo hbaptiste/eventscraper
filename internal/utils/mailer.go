@@ -81,7 +81,6 @@ func (m *Mailer) startWorker() {
 
 func (m *Mailer) _sendEmail(task EmailTask) error {
 
-	fmt.Printf("password %s, user :%s", m.smtpPassword, m.smtpUser)
 	auth := smtp.PlainAuth("", m.smtpUser, m.smtpPassword, m.smtpHost)
 
 	msg := fmt.Sprintf("To: %s\r\nSubject: %s\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n%s",

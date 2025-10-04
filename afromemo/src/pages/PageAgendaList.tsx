@@ -1,42 +1,37 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import useLocalStorage from "../hooks/useLocalStorage";
-import useAuthStore, { AuthInfos } from "../store/useAuthStore";
-import {
-  AgendaItem,
-  Places,
-  Status,
-  UserSubmission,
-  Categories,
-} from "../types";
+import useGetAgendaEntries from "../hooks/useGetAgendaEntries";
+import useGetSubmissions from "../hooks/useGetSubmissions";
+import useUserInfos from "../hooks/useUserInfos";
+import useAuthStore from "../store/useAuthStore";
+import { AgendaItem, Places, Status, Categories } from "../types";
 import { fetch, formatDateRange, getPlace } from "../utils/main";
 
 const AgendaListView = () => {
   const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
+
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [userSubmissionIsLoaded, setUserSubmissionIsLoaded] =
-    useState<boolean>(false);
+
+  const { isAdmin } = useUserInfos();
 
   const [total, setTotal] = useState<number>(0);
 
   const [filter, setFilter] = useState({
     category: "",
-    status: Status.ACTIVE as unknown as string,
+    status: isAdmin
+      ? parseInt(Status.PENDING as unknown as string)
+      : parseInt(Status.ACTIVE as unknown as string),
 
     searchTerm: "",
     place: "",
-    userSubmitted: false, // Add this
+    userSubmitted: isAdmin ? true : false, // Add this
   });
+
   const [filteredItems, setFilteredItems] = useState<AgendaItem[]>(agendaItems);
   const API_URL = import.meta.env.VITE_API_URL;
   const BACKEND_IMAGE_URL = import.meta.env.VITE_BACKEND_IMAGE_PATH;
-
-  const { value: authInfos, isReady } = useLocalStorage<AuthInfos>(
-    "authInfos",
-    null
-  );
 
   /**Token */
   const { token } = useAuthStore((state: any) => state);
@@ -44,108 +39,32 @@ const AgendaListView = () => {
   /* item hovered */
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
 
+  // data
+  const { entries } = useGetAgendaEntries(isAdmin);
+  const { submissions } = useGetSubmissions(isAdmin);
+
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isReady) return;
-    if (authInfos) {
-      const { role } = authInfos.user;
-      if (role && role.split(",").includes("adm")) {
-        setIsAdmin(true);
-      } else {
-        setIsAdmin(false);
-      }
-    } else {
-      setIsAdmin(false);
-    }
-  }, [isReady, authInfos]);
+    if (isAdmin == null) return;
+    const status = isAdmin
+      ? parseInt(Status.PENDING as unknown as string)
+      : parseInt(Status.ACTIVE as unknown as string);
+
+    setFilter((prev) => ({ ...prev, userSubmitted: isAdmin, status }));
+  }, [isAdmin]);
   // Fetch agenda items from API
   useEffect(() => {
-    let canFetch = true;
-    const fetchAgendaItems = async () => {
-      try {
-        setLoading(true);
-        if (!isReady || isAdmin == null) {
-          return;
-        }
+    if (!entries) return;
+    setLoading(false);
+    setAgendaItems(entries);
+    console.log(">>submissions", submissions);
+  }, [entries, submissions]);
 
-        const endpoint = isAdmin ? `/api/protected/agenda` : `/api/agenda`;
-        const headers: HeadersInit = {
-          "Content-Type": "application/json",
-        };
-
-        if (isAdmin) {
-          if (!token) {
-            return;
-          }
-          headers.Authorization = `Bearer ${token}`;
-        }
-        const response = await fetch(endpoint, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (response && !response.ok) {
-          throw new Error(`Error: ${response.status}`);
-        }
-        const data = await response.json(); //from server
-        if (Array.isArray(data)) {
-          const withImages = data.map((item) => {
-            if (item.poster.length == 0) {
-              item.poster = "/placeholder.jpg";
-            }
-            return item;
-          });
-          setAgendaItems([...withImages]);
-        }
-        setError(null);
-      } catch (err) {
-        //setError("Failed to fetch agenda items. Please try again later.");
-        console.error("Error fetching agenda items:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (canFetch) fetchAgendaItems();
-    return () => {
-      canFetch = false;
-    };
-  }, [isAdmin, isReady, token]);
-
-  const fetchUserSubmissions = async () => {
-    const response = await fetch("/api/protected/submissions", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    const data = await response.json();
-    // Populate item here
-    const userSubmissions = data
-      .map(({ id, email, formData, token, status }: UserSubmission) => {
-        formData["email"] = email;
-        formData["id"] = id;
-        formData["userSubmission"] = true;
-        formData["token"] = token;
-        // handle status - deleted
-        switch (status) {
-          case "active":
-            formData["status"] = Status.ACTIVE;
-            break;
-          case "archived":
-            formData["status"] = Status.ARCHIVED;
-            break;
-          case "deleted":
-            formData["status"] = Status.DELETED;
-            break;
-          default:
-            formData["status"] = Status.PENDING;
-            break;
-        }
-        return { ...formData };
-      })
-      .filter((item: { email: string }) => item.email != "");
-    setAgendaItems([...agendaItems, ...userSubmissions]);
-  };
+  useEffect(() => {
+    if (!submissions) return;
+    setAgendaItems((prev) => [...prev, ...(submissions as AgendaItem[])]);
+  }, [submissions]);
 
   useEffect(() => {
     let filteredItems = agendaItems.filter((item) => {
@@ -153,7 +72,6 @@ const AgendaListView = () => {
       if (filter.category && item.category !== filter.category) {
         return false;
       }
-
       // Filter by status if specified
       if (filter.status && item.status !== parseInt(filter.status)) {
         if (!isAdmin && item.status == Status.DELETED) return true;
@@ -184,7 +102,7 @@ const AgendaListView = () => {
       setTotal(agendaItems.length);
     } else {
       filteredItems = filteredItems.filter(
-        (item) => item.email && item.email != ""
+        (item) => item.userSubmission && item.userSubmission == true
       );
       setTotal(
         agendaItems.filter((item) => item.userSubmission == true).length
@@ -195,7 +113,7 @@ const AgendaListView = () => {
   }, [filter, agendaItems]);
 
   // watch user submitted Filter
-  useEffect(() => {
+  /*useEffect(() => {
     if (userSubmissionIsLoaded) {
       return;
     }
@@ -204,16 +122,11 @@ const AgendaListView = () => {
       setFilter((prev) => {
         return { ...prev, status: Status.PENDING as unknown as string };
       });
-
-      if (canFetch) {
-        fetchUserSubmissions();
-        setUserSubmissionIsLoaded(true);
-      }
     }
     return () => {
       canFetch = false;
     };
-  }, [userSubmissionIsLoaded, filter]);
+  }, [userSubmissionIsLoaded, filter]);*/
 
   // Handle filter changes
   const handleFilterChange = (

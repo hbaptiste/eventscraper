@@ -72,7 +72,6 @@ func (repo *AgendaRepository) Create(ctx context.Context, entity *db.AgendaEntry
 	if err != nil {
 		fmt.Errorf("Create agenda error %v", err)
 	}
-	fmt.Println("item %v", entity)
 	// populate back with ID
 	return entity, nil
 }
@@ -123,10 +122,10 @@ func (repo *AgendaRepository) FindAll(ctx context.Context, filter Filter) ([]db.
 		if owner, exists := filter["owner"]; exists {
 			criteria = append(criteria, fmt.Sprintf("owner=%d", owner))
 		}
-		fmt.Printf("Criteria:: %s \n", criteria)
 	}
 	query += strings.Join(criteria, " AND ")
 	query += " ORDER BY startdate ASC;"
+	fmt.Printf("Query:: %s \n", query)
 
 	var tagString string
 	var startDateString string
@@ -230,7 +229,7 @@ func (repo *AgendaRepository) rowToAgendaEntry(row *sql.Row, entry *db.AgendaEnt
 		&entry.VenueName,
 	)
 	if err != nil {
-		fmt.Printf("agenda_repository %v\n", err)
+		fmt.Printf("agenda_repository:rowToAgendaEntry %v\n", err)
 		return nil, err
 	}
 	if startDate, err := time.Parse(dateLayout, startDateString); err == nil {

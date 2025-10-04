@@ -271,7 +271,6 @@ func getAllSubmissions(service *ServiceMiddleWare, writer http.ResponseWriter, r
 		})
 		return
 	}
-	fmt.Println("Nombre de soumissions::%d", len(submissions))
 	response := make([]VisitorFormRequest, len(submissions))
 
 	for _, submission := range submissions {
@@ -347,13 +346,13 @@ func deleteSubmission(services *ServiceMiddleWare, writer http.ResponseWriter, r
 	// deleted linked agenda
 	err = services.agendaRepository.UpdateStatus(submission.ID, int(db.Status_Deleted))
 	if err != nil && err != repository.ErrNoAgendaEntryFound {
+		fmt.Sprintf("UpdateStatus::Error %s\n", err)
 		createErrorResponse(writer, "Error while removing linked agenda entry", http.StatusInternalServerError)
 		return
 	}
 	writeJSONResponse(writer, http.StatusOK, OkResponse{
 		Message: fmt.Sprintf("Submission %s deleted", submission.ID),
 	})
-	fmt.Println("Linked agenda deleted...")
 
 }
 func ConfirmSubmission(services *ServiceMiddleWare) func(http.ResponseWriter, *http.Request) {
@@ -520,7 +519,6 @@ func GetSubmissionDiff(service *ServiceMiddleWare) func(http.ResponseWriter, *ht
 		urlPart := strings.Split(req.URL.Path, "/")
 		if len(urlPart) > 3 {
 			submissionID := urlPart[4]
-			fmt.Printf("submission id:::%s\n", submissionID)
 			agendaEntry, err := service.agendaRepository.FindByID(req.Context(), submissionID)
 
 			if err != nil {

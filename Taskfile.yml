@@ -228,10 +228,16 @@ tasks:
     cmds:
       - scp -r {{.LOCAL_BUILD_PATH}}/* {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_API_DIR}}/
 
+
   dev:apply-migration:
     desc: Generate all repo
     cmds:
       - migrate -verbose -database "sqlite3://./agenda.db" -path ./internal/db/migrations up
+
+  remote:tail-logs:
+    desc: "Stream remote application logs in real-time (Ctrl+C to stop)."
+    cmds:
+      - ssh {{.SERVER_USER}}@{{.SERVER_HOST}} " tail -f {{.REMOTE_API_DIR}}/logs/app.log" # Allow owner/group read/write
 
   deploy:
     desc: Deploy to remote
