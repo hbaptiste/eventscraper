@@ -1,4 +1,4 @@
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useGetAgendaEntries from "../hooks/useGetAgendaEntries";
 import useGetSubmissions from "../hooks/useGetSubmissions";
@@ -12,7 +12,7 @@ const AgendaListView = () => {
 
   const [loading, setLoading] = useState(true);
 
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
 
   const { isAdmin } = useUserInfos();
 
@@ -58,7 +58,6 @@ const AgendaListView = () => {
     if (!entries) return;
     setLoading(false);
     setAgendaItems(entries);
-    console.log(">>submissions", submissions);
   }, [entries, submissions]);
 
   useEffect(() => {
@@ -73,7 +72,10 @@ const AgendaListView = () => {
         return false;
       }
       // Filter by status if specified
-      if (filter.status && item.status !== parseInt(filter.status)) {
+      if (
+        filter.status &&
+        item.status !== parseInt(filter.status as unknown as string)
+      ) {
         if (!isAdmin && item.status == Status.DELETED) return true;
         return false;
       }
@@ -111,22 +113,6 @@ const AgendaListView = () => {
 
     setFilteredItems(filteredItems);
   }, [filter, agendaItems]);
-
-  // watch user submitted Filter
-  /*useEffect(() => {
-    if (userSubmissionIsLoaded) {
-      return;
-    }
-    let canFetch = true;
-    if (filter.userSubmitted == true) {
-      setFilter((prev) => {
-        return { ...prev, status: Status.PENDING as unknown as string };
-      });
-    }
-    return () => {
-      canFetch = false;
-    };
-  }, [userSubmissionIsLoaded, filter]);*/
 
   // Handle filter changes
   const handleFilterChange = (
@@ -362,14 +348,24 @@ const AgendaListView = () => {
                     {/* Poster image on the left */}
                     {item.poster && (
                       <div className="w-full md:w-48 h-48 md:h-auto overflow-hidden relative group flex-shrink-0">
-                        <img
-                          src={`${BACKEND_IMAGE_URL}/${item.poster}`}
-                          alt={`Poster for ${item.title}`}
-                          className="w-full object-cover md:rounded-l-lg"
-                          onError={(e) => {
-                            e.currentTarget.src = "/placeholder.jpg";
-                          }}
-                        />
+                        <div className="flex relative">
+                          <img
+                            src={`${BACKEND_IMAGE_URL}/${item.poster}`}
+                            alt={`Poster for ${item.title}`}
+                            className="w-full object-cover md:rounded-l-lg"
+                            onError={(e) => {
+                              e.currentTarget.src = "/placeholder.jpg";
+                            }}
+                          />
+                          {item.status === Status.DELETED && (
+                            <div className="absolute right-0 flex items-center justify-center pointer-events-none">
+                              <div className="bg-red-600 text-white font-bold text-sm px-4 py-1 _rotate-[-25deg] shadow-lg opacity-90">
+                                ANNULÉ
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
                         {isAdmin &&
                           !isFromUser(item) &&
                           hoveredItemId &&
@@ -411,11 +407,6 @@ const AgendaListView = () => {
                           {item.status === Status.INACTIVE && (
                             <span className="ml-2 text-red-500 text-sm font-normal">
                               (Désactivé)
-                            </span>
-                          )}
-                          {item.status === Status.DELETED && (
-                            <span className="ml-2 text-red-500 text-sm font-normal">
-                              (Annulé)
                             </span>
                           )}
                         </h2>

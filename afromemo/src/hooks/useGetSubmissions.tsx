@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import useAuthStore from "../store/useAuthStore";
 import { AgendaItem, Status, UserSubmission } from "../types";
 import { fetch } from "../utils/main";
@@ -41,7 +41,6 @@ const useGetSubmissions = (isAdmin: boolean | null) => {
                 formData["status"] = Status.PENDING;
                 break;
             }
-
             return { ...formData };
           })
           .filter((item: { email: string }) => item.email != "");
