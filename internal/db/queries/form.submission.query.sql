@@ -36,3 +36,6 @@ DELETE FROM form_submissions
 UPDATE form_submissions 
     SET status = ?
     WHERE ID = ?;
+
+-- name: DeleteSubmissionByID :exec
+DELETE FROM form_submissions WHERE ID = ?;

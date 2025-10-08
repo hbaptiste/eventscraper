@@ -28,6 +28,7 @@ const (
 	Status_Deleted
 	Status_Unlinked
 	Status_Archived
+	Status_Removed
 )
 
 // custom unmarshal
@@ -51,6 +52,8 @@ func (a *Status) UnmarshalJSON(b []byte) error {
 		*a = Status_Unlinked
 	case 5:
 		*a = Status_Archived
+	case 6:
+		*a = Status_Removed
 	default:
 		*a = Status_Inactive
 	}

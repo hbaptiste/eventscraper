@@ -553,7 +553,7 @@ func agendaStatusHandler(resp http.ResponseWriter, req *http.Request) {
 	}
 	var statusRequest AgendaStatusRequest
 	err = json.NewDecoder(req.Body).Decode(&statusRequest)
-	log.Printf("Query Param: %v", statusRequest)
+	log.Printf("iciQuery Param: %v", statusRequest)
 	if err != nil {
 		log.Printf("Bad Request %v", err)
 		writeJSONResponse(resp, http.StatusUnprocessableEntity, ErrorResponse{
@@ -561,19 +561,39 @@ func agendaStatusHandler(resp http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
-	// deal with current user form token
-	if err := agendaEntry.UpdateStatus(statusRequest.Id, statusRequest.Status); err != nil {
-		log.Printf("Internal Error while updated Status %v", err)
-		writeJSONResponse(resp, http.StatusInternalServerError, ErrorResponse{
-			Message: "Internal Error while updated Status",
+	// Supprimer l'événement/supprimer
+	if statusRequest.Status == int(db.Status_Removed) {
+		log.Println("Deleting Event %s", statusRequest.Id)
+		if err := agendaEntry.Delete(req.Context(), statusRequest.Id); err != nil {
+			log.Printf("Internal Error while delete entry: %s\n", statusRequest.Id)
+		}
+		queries, err := GetRepository[gendb.Queries](req.Context(), serviceKey)
+		if err != nil {
+			log.Printf("Internal error %w", err)
+			return
+		}
+		log.Println("Deleting linked Submission for %s", statusRequest.Id)
+		err = queries.DeleteSubmissionByID(req.Context(), statusRequest.Id)
+		if err != nil {
+			log.Println("DeleteSubmissionByID::Error")
+			return
+		}
+	} else {
+		// deal with current user form token
+		if err := agendaEntry.UpdateStatus(statusRequest.Id, statusRequest.Status); err != nil {
+			log.Printf("Internal Error while updated Status %v", err)
+			writeJSONResponse(resp, http.StatusInternalServerError, ErrorResponse{
+				Message: "Internal Error while updated Status",
+			})
+			return
+		}
+		writeJSONResponse(resp, http.StatusAccepted, OkResponse{
+			Success: true,
+			Message: "Status updated",
 		})
-		return
+		log.Printf("Status update for entry %s!", statusRequest)
 	}
-	writeJSONResponse(resp, http.StatusAccepted, OkResponse{
-		Success: true,
-		Message: "Status updated",
-	})
-	log.Printf("Status update for entry %s!", statusRequest)
+
 }
 
 func handlePoster(agendaEntry *db.AgendaEntry) {

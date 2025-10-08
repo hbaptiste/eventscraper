@@ -16,6 +16,8 @@ const AgendaListView = () => {
 
   const { isAdmin } = useUserInfos();
 
+  const [itemIDToDelete, setItemIDToDelete] = useState<string | null>(null);
+
   const [total, setTotal] = useState<number>(0);
 
   const [filter, setFilter] = useState({
@@ -158,7 +160,36 @@ const AgendaListView = () => {
     return item.status != Status.ACTIVE && item.status != Status.ARCHIVED;
   };
 
+  // doRemove
+  const doRemoveEntry = async (item: AgendaItem) => {
+    //removeItem
+    const cleanedItems = filteredItems.filter((itm) => itm.id != item.id);
+    setAgendaItems(cleanedItems);
+    await fetch(`${API_URL}/agenda/${item.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        id: item.id,
+        status: Status.REMOVED as unknown as string,
+      }),
+    });
+  };
+
   const handleChangeStatus = async (itemId: string, status: Status) => {
+    // if status
+    if (status == Status.REMOVED) {
+      setItemIDToDelete(itemId);
+      /* setFilteredItems((prevItems) => {
+        return prevItems.map((item) =>
+          item.id === itemId ? { ...item, status: status } : item
+        );
+        // Create cancel function here
+      });*/
+      return;
+    }
     // Optimistic update test why it's not working
     setFilteredItems((prevItems) => {
       return prevItems.map((item) =>
@@ -367,6 +398,7 @@ const AgendaListView = () => {
                         </div>
 
                         {isAdmin &&
+                          itemIDToDelete !== item.id &&
                           !isFromUser(item) &&
                           hoveredItemId &&
                           hoveredItemId == (item.id as string) && (
@@ -392,6 +424,9 @@ const AgendaListView = () => {
                                   Inactive
                                 </option>
                                 <option value={Status.DELETED}>Annulé</option>
+                                <option value={Status.REMOVED}>
+                                  Supprimer
+                                </option>
                               </select>
                             </div>
                           )}
@@ -529,66 +564,93 @@ const AgendaListView = () => {
                       )}
 
                       {/* Cleaner actions bar */}
-                      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <div className="flex items-center space-x-4">
-                          <Link
-                            to={`/agenda/${item.id}`}
-                            onClick={(e) => e.stopPropagation()}
-                            state={{ agendaItem: item }}
-                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                          >
-                            Voir détails
-                          </Link>
+                      {!itemIDToDelete && (
+                        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                          <div className="flex items-center space-x-4">
+                            <Link
+                              to={`/agenda/${item.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              state={{ agendaItem: item }}
+                              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            >
+                              Voir détails
+                            </Link>
 
-                          {isAdmin &&
-                            !isFromUser(item) &&
-                            !isEditable(item) && (
+                            {isAdmin &&
+                              !isFromUser(item) &&
+                              !isEditable(item) && (
+                                <Link
+                                  onClick={(e) => e.stopPropagation()}
+                                  to={`/agenda/${item.id}/edit`}
+                                  state={{ agendaItem: item }}
+                                  className="text-blue-600 hover:text-blue-800 text-sm"
+                                >
+                                  Éditer
+                                </Link>
+                              )}
+                            {isFromUser(item) && isPublishable(item) && (
                               <Link
                                 onClick={(e) => e.stopPropagation()}
-                                to={`/agenda/${item.id}/edit`}
+                                to={`/agenda/public/${item.token}/validate`}
                                 state={{ agendaItem: item }}
-                                className="text-blue-600 hover:text-blue-800 text-sm"
+                                className="text-blue-600 hover:text-blue-800 font-medium text-sm"
                               >
-                                Éditer
+                                Valider
                               </Link>
                             )}
-                          {isFromUser(item) && isPublishable(item) && (
-                            <Link
+                          </div>
+
+                          {item.link && (
+                            <a
+                              href={item.link}
                               onClick={(e) => e.stopPropagation()}
-                              to={`/agenda/public/${item.token}/validate`}
-                              state={{ agendaItem: item }}
-                              className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
                             >
-                              Valider
-                            </Link>
+                              Site de l'événement
+                              <svg
+                                className="ml-1 w-3 h-3"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                />
+                              </svg>
+                            </a>
                           )}
                         </div>
-
-                        {item.link && (
+                      )}
+                      {itemIDToDelete == item.id && (
+                        <div
+                          className="flex justify-between"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <a
-                            href={item.link}
-                            onClick={(e) => e.stopPropagation()}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
+                            className="text-sm cursor-pointer font-medium text-red-500"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              doRemoveEntry(item);
+                            }}
                           >
-                            Site de l'événement
-                            <svg
-                              className="ml-1 w-3 h-3"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                              />
-                            </svg>
+                            Confirmer la suppression
+                          </a>{" "}
+                          <a
+                            className="text-sm cursor-pointer font-medium text-red-500"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setItemIDToDelete(null);
+                            }}
+                          >
+                            Annuler la suppression
                           </a>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

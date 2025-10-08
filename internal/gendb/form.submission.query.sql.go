@@ -70,6 +70,15 @@ func (q *Queries) CreateFormSubmission(ctx context.Context, arg CreateFormSubmis
 	return err
 }
 
+const deleteSubmissionByID = `-- name: DeleteSubmissionByID :exec
+DELETE FROM form_submissions WHERE ID = ?
+`
+
+func (q *Queries) DeleteSubmissionByID(ctx context.Context, id string) error {
+	_, err := q.db.ExecContext(ctx, deleteSubmissionByID, id)
+	return err
+}
+
 const getSubmissionByID = `-- name: GetSubmissionByID :one
 SELECT id, email, data, edit_token, cancel_token, created_at, updated_at, status, expired_at, confirmation_token
     FROM form_submissions

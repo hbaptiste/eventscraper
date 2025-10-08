@@ -4,6 +4,7 @@ export enum Status {
   PENDING = 2,
   DELETED = 3,
   ARCHIVED = 5,
+  REMOVED = 6,
 }
 
 export interface AgendaItem {
