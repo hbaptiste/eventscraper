@@ -437,7 +437,11 @@ const AgendaListView = () => {
                     <div className="flex-1 p-4">
                       {/* Title and category */}
                       <div className="mb-3">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-1">
+                        <h2
+                          className={`text-lg font-semibold text-gray-900 mb-1 ${
+                            item.status == Status.DELETED ? `line-through` : ""
+                          }`}
+                        >
                           {item.title}
                           {item.status === Status.INACTIVE && (
                             <span className="ml-2 text-red-500 text-sm font-normal">
@@ -445,7 +449,11 @@ const AgendaListView = () => {
                             </span>
                           )}
                         </h2>
-                        <h3 className="text-gray-600 font-medium mb-1">
+                        <h3
+                          className={`text-gray-600 font-medium mb-1 ${
+                            item.status == Status.DELETED ? `line-through` : ""
+                          }`}
+                        >
                           {item.subtitle}
                         </h3>
                         {item.category && (

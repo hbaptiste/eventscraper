@@ -32,7 +32,7 @@ export interface AgendaItem {
 }
 export enum Places {
   GENEVE = "Grand Genève",
-  LAUSANNE = "Lausanne/Vaud",
+  LAUSANNE = "Lausanne Vaud",
   ALTSWISS = "Suisse globale",
   INTERNATIONAL = "International",
 }

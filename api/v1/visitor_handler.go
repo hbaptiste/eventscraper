@@ -432,7 +432,9 @@ func SubmissionHandler(services *ServiceMiddleWare) func(http.ResponseWriter, *h
 				token := urlPaths[3]
 				if token != "" {
 					submission, err := services.queries.GetSubmissionByToken(req.Context(), gendb.GetSubmissionByTokenParams{
-						EditToken: token,
+						EditToken:         token,
+						CancelToken:       token,
+						ConfirmationToken: token,
 					})
 					if err != nil {
 						fmt.Printf("SubmissionHandler::%v\n", err)

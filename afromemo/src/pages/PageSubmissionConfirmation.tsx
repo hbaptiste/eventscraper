@@ -33,7 +33,7 @@ const PageSubmissionConfirmation = () => {
           <p>Votre email a bien été validé.</p>
           <p>
             Suivez les instructions que vous allez recevoir par email pour
-            éditer ou supprimer votre événement.
+            éditer, supprimer ou annuler votre événement.
           </p>
           <p className="">
             Une fois validé, il sera visible très rapidement sur notre

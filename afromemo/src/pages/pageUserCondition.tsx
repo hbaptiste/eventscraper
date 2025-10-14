@@ -29,18 +29,18 @@ const PageUserCondition = () => {
           <li>
             Spectacles{" "}
             <span className="text-sm">
-              (théâtre, danse, comédies-musicales, opéras, performances, cinéma
-              et humour)
+              (théâtre, danse, performances, humour, comédies-musicales, opéras
+              et cinéma)
             </span>
           </li>
           <li>Expositions</li>
           <li>
-            Conférences et mobilisations{" "}
+            Conférences et rencontres{" "}
             <span className="text-sm">
-              (rencontres, engagements, luttes, militantisme, etc.)
+              (tables-rondes, colloques, mobilisation, militantisme, etc.)
             </span>
           </li>
-          <li>Jeunes</li>
+          <li>Juniors</li>
           <li>
             Divers{" "}
             <span className="text-sm">
@@ -78,26 +78,43 @@ const PageUserCondition = () => {
           <li>
             À l’international{" "}
             <span className="text-sm">
-              (que des événements reconnus et/ou officiellement vérifiables qui
+              (que des événements officiellement reconnus et/ou vérifiables qui
               ont lieu ailleurs dans le monde)
             </span>
           </li>
         </ul>
         <p className="mb-3">
-          Les <span className="font-bold">tags</span> permettent de mettre les
-          mots clefs qui correspondent à un événement : par exemple pour une
-          pièce de théâtre sénégalaise qui traite des rapports familiaux qui
-          apparaîtra sous la rubrique “spectacle“ on peut mettre les tags
-          suivants (en un seul mot séparé par une virgule): théâtre, Sénégal,
-          famille.
+          Le choix est de mettre à disposition une interface avec un formulaire
+          relativement simple à remplir.
         </p>
         <p className="mb-3">
-          Le choix est de mettre à disposition une interface avec un formulaire
-          relativement simple à remplir. Si plusieurs{" "}
-          <span className="font-bold">horaires</span> s’appliquent à un même
-          événement, ils peuvent figurer dans les informations complémentaires.
-          L’internaute pourra y accéder en cliquant sur “voir détails“.
+          Le <span className="font-bold">titre</span>, éventuellement un{" "}
+          <span className="font-bold">sous-titre</span> et la{" "}
+          <span className="font-bold">description</span> vous permettent de
+          présenter votre événement. Exceptionnellement une modification pourra
+          être apportée au niveau rédactionnel.
         </p>
+        <p className="mb-3">
+          Les <span className="font-bold">informations complémentaires</span>{" "}
+          permettent d’apporter des précisions. Par ailleurs, lorsqu’il y a
+          plusieurs horaires qui s’appliquent à un même événement, ils peuvent y
+          figurer. L’internaute pourra accéder à ces différentes informations en
+          cliquant sur "voir détails".
+        </p>
+        <p>
+          Un <span className="font-bold">visuel</span> permet de finaliser la
+          présentation (une photographie ou un flyer).{" "}
+        </p>
+
+        <p className="mb-3">
+          Les <span className="font-bold">tags</span> permettent de mettre les
+          mots clefs qui correspondent à un événement : par exemple pour une
+          pièce de théâtre du Burkina Faso (mettre un trait d'union pour entre
+          deux mots), traitant des rapports familiaux qui apparaîtra sous la
+          rubrique "spectacle" on peut mettre les tags suivants (séparés
+          entre-eux par une virgule): théâtre, Burina-Faso, famille.
+        </p>
+
         <p className="mb-3">
           À noter que la plupart des événements ont un site internet ou une page
           sur un réseau social (Facebook, Instagram, etc.) qu’il est conseillé
@@ -108,8 +125,7 @@ const PageUserCondition = () => {
           La mise en ligne des événements est{" "}
           <strong>validée dans les 3 jours</strong>. Ceci afin d’éviter les
           propos haineux, discriminatoires, sexistes et bien sûr racistes qui ne
-          sont pas acceptés. Par ailleurs, exceptionnellement, au niveau
-          rédactionnel une modification pourra être faite.
+          sont pas acceptés.
         </p>
         <p className="mb-3">
           Concernant les autres aspects,{" "}

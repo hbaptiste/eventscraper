@@ -7,6 +7,7 @@ package gendb
 
 import (
 	"context"
+	"database/sql"
 )
 
 const archivePastEvents = `-- name: ArchivePastEvents :exec
@@ -16,4 +17,72 @@ UPDATE agenda_entry SET status = 5 WHERE date(enddate, '+1 day') < date('now') O
 func (q *Queries) ArchivePastEvents(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, archivePastEvents)
 	return err
+}
+
+const getAgendaCountFacets = `-- name: GetAgendaCountFacets :one
+SELECT
+  SUM(CASE
+    WHEN startdate <= CAST(?1 AS TEXT)
+    AND COALESCE(NULLIF(enddate, ''), startdate) >= CAST(?2 AS TEXT)
+    THEN 1 ELSE 0
+  END) as today,
+  
+  SUM(CASE
+    WHEN startdate <= CAST(?3 AS TEXT)
+    AND COALESCE(NULLIF(enddate, ''), startdate) >= CAST(?4 AS TEXT)
+    THEN 1 ELSE 0
+  END) as this_weekend,
+  
+  SUM(CASE
+    WHEN startdate <= CAST(?5 AS TEXT)
+    AND COALESCE(NULLIF(enddate, ''), startdate) >= CAST(?6 AS TEXT)
+    THEN 1 ELSE 0
+  END) as this_week,
+  
+  SUM(CASE
+    WHEN startdate <= CAST(?7 AS TEXT)
+    AND COALESCE(NULLIF(enddate, ''), startdate) >= CAST(?8 AS TEXT)
+    THEN 1 ELSE 0
+  END) as next_week
+FROM agenda_entry
+WHERE status = 1
+`
+
+type GetAgendaCountFacetsParams struct {
+	TodayEnd      string
+	TodayStart    string
+	WeekendEnd    string
+	WeekendStart  string
+	WeekEnd       string
+	WeekStart     string
+	NextWeekEnd   string
+	NextWeekStart string
+}
+
+type GetAgendaCountFacetsRow struct {
+	Today       sql.NullFloat64
+	ThisWeekend sql.NullFloat64
+	ThisWeek    sql.NullFloat64
+	NextWeek    sql.NullFloat64
+}
+
+func (q *Queries) GetAgendaCountFacets(ctx context.Context, arg GetAgendaCountFacetsParams) (GetAgendaCountFacetsRow, error) {
+	row := q.db.QueryRowContext(ctx, getAgendaCountFacets,
+		arg.TodayEnd,
+		arg.TodayStart,
+		arg.WeekendEnd,
+		arg.WeekendStart,
+		arg.WeekEnd,
+		arg.WeekStart,
+		arg.NextWeekEnd,
+		arg.NextWeekStart,
+	)
+	var i GetAgendaCountFacetsRow
+	err := row.Scan(
+		&i.Today,
+		&i.ThisWeekend,
+		&i.ThisWeek,
+		&i.NextWeek,
+	)
+	return i, err
 }

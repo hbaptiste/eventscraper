@@ -281,7 +281,6 @@ func loginWithServices(sc *ServiceMiddleWare) http.HandlerFunc {
 		}
 		// check  password
 		//password, err := bcrypt.GenerateFromPassword([]byte(logReq.Password), bcrypt.DefaultCost)
-		log.Printf("user:%s, provided: %s", logReq.Password)
 		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(logReq.Password))
 		if err != nil {
 			writeJSONResponse(resp, http.StatusUnauthorized, ErrorResponse{
