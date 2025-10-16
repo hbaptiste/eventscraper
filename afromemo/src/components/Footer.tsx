@@ -18,7 +18,7 @@ export default function Footer() {
             </span>
           </span>
 
-          <p className="font-medium">contact: info at afromemo.ch</p>
+          <p className="font-medium">contact&nbsp;: info at afromemo.ch</p>
         </div>
       </div>
     </footer>
