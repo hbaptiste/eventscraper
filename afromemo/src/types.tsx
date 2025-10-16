@@ -41,8 +41,8 @@ export enum Categories {
   MUSIQUE = "Musiques et fêtes",
   SPECTACLES = "Spectacles",
   EXPOSITIONS = "Expositions",
-  CONFERENCES = "Conférences et mobilisations",
-  JEUNES = "Jeunes",
+  CONFERENCES = "Conférences et rencontres",
+  JEUNES = "Juniors",
   DIVERS = "Divers",
 }
 

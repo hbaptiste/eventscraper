@@ -1,23 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import useFetchItem from "../hooks/useFetchItem";
-import useGetItemById from "../hooks/useFetchItem";
 import { useMessage } from "../hooks/useMessage";
-import { AgendaItem, UserSubmission } from "../types";
+import { UserSubmission } from "../types";
 
 export const PageSubmissionDeletion = () => {
   const { tokenId } = useParams();
   const { setMessage } = useMessage();
   const navigate = useNavigate();
 
-  const [linkedContent, setLinkedContent] = useState<AgendaItem>();
-
   const { data: userSubmission, error } = useFetchItem<UserSubmission>(
     `/api/submissions/${tokenId}`
   );
-  useEffect(() => {
-    console.log(">>>", userSubmission);
-  }, [userSubmission]);
+  useEffect(() => {}, [userSubmission]);
 
   // effect
   const onHandleClick = async (

@@ -22,7 +22,7 @@ const PageUserCondition = () => {
         <p className="mb-3 font-medium">
           Les organes qui les annoncent peuvent proposer, et les internautes qui
           les consultent peuvent sélectionner, des événements répartis sous les
-          rubriques suivantes :
+          rubriques suivantes&nbsp;:
         </p>
         <ul className="mb-6 pt-6 pl-12 list-disc font-semibold">
           <li>Musiques et fêtes</li>
@@ -53,7 +53,8 @@ const PageUserCondition = () => {
           L’annonce d’événements religieux et commerciaux n’est pas acceptée.
         </p>
         <p className="mb-3 font-medium">
-          Les événements annoncés sont répartis selon les "régions" suivantes :
+          Les événements annoncés sont répartis selon les "régions"
+          suivantes&nbsp;:
         </p>
 
         <ul className="mb-6 pl-12 list-disc font-semibold">
@@ -108,11 +109,11 @@ const PageUserCondition = () => {
 
         <p className="mb-3">
           Les <span className="font-bold">tags</span> permettent de mettre les
-          mots clefs qui correspondent à un événement : par exemple pour une
-          pièce de théâtre du Burkina Faso (mettre un trait d'union pour entre
-          deux mots), traitant des rapports familiaux qui apparaîtra sous la
-          rubrique "spectacle" on peut mettre les tags suivants (séparés
-          entre-eux par une virgule): théâtre, Burina-Faso, famille.
+          mots clefs qui correspondent à un événement&nbsp;: par exemple pour
+          une pièce de théâtre du Burkina Faso (mettre un trait d'union pour
+          entre deux mots), traitant des rapports familiaux qui apparaîtra sous
+          la rubrique "spectacle" on peut mettre les tags suivants (séparés
+          entre-eux par une virgule)&nbsp;: théâtre, Burina-Faso, famille.
         </p>
 
         <p className="mb-3">
@@ -135,15 +136,13 @@ const PageUserCondition = () => {
           </strong>
           , surtout si le prix des billets est relativement élevé, et/ou que
           l’événement se trouve à l’étranger et demande d’engager des frais de
-          déplacement importants. <strong>Ne soyons pas naïf !</strong>
+          déplacement importants. <strong>Ne soyons pas naïf&nbsp;!</strong>
         </p>
         <p className="mb-6">
           Bonne utilisation de l’agenda{" "}
-          <span className="font-medium">AFROMEMO.CH!</span>
+          <span className="font-medium">AFROMEMO.CH&nbsp;!</span>
         </p>
-        <p className="mb-6 text-right font-medium">
-          AFROMEMO.CH, septembre 2025
-        </p>
+        <p className="mb-6 text-right font-medium">AFROMEMO.CH, octobre 2025</p>
       </div>
     </div>
   );
