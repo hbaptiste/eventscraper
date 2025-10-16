@@ -91,7 +91,7 @@ export default function PageAgendaItemDetailView() {
               </div>
             </div>
             {agendaItem.status === Status.DELETED && (
-              <div className="absolute right-0 flex items-center justify-center pointer-events-none">
+              <div className="absolute top-4 right-0 flex items-center justify-center pointer-events-none">
                 <div className="bg-red-600 text-white font-bold text-sm px-4 py-1 _rotate-[-25deg] shadow-lg opacity-90">
                   ANNULÉ
                 </div>

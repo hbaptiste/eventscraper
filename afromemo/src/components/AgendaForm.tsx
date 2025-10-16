@@ -331,6 +331,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             id="link"
             name="link"
             className="w-full p-2 border rounded"
+            placeholder="http://exemple.ch"
             value={formData.link}
             onChange={handleChange}
           />
