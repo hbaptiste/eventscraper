@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 import { useParams, useLocation } from "react-router-dom";
-import { AgendaItem, Places } from "../types";
+import { AgendaItem, Places, Status } from "../types";
 import {
   formatDateRange,
   getPlace,
@@ -85,20 +85,36 @@ export default function PageAgendaItemDetailView() {
               alt={agendaItem.title}
               className="w-full object-cover"
             />
-            <div className="absolute top-4 right-4">
+            <div className="absolute top-4 left-4">
               <div className="flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
                 {getCategory(agendaItem.category)}
               </div>
             </div>
+            {agendaItem.status === Status.DELETED && (
+              <div className="absolute right-0 flex items-center justify-center pointer-events-none">
+                <div className="bg-red-600 text-white font-bold text-sm px-4 py-1 _rotate-[-25deg] shadow-lg opacity-90">
+                  ANNULÉ
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Title and Subtitle Section */}
           <div className="px-6 pt-6 pb-4 border-b border-gray-100">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            <h2
+              className={`text-3xl font-bold text-gray-900 mb-2 ${
+                agendaItem.status == Status.DELETED ? `line-through` : ""
+              }`}
+            >
               {agendaItem.title}
             </h2>
+
             {agendaItem.subtitle && (
-              <p className="text-xl text-gray-600 font-medium">
+              <p
+                className={`text-xl text-gray-600 font-medium ${
+                  agendaItem.status == Status.DELETED ? `line-through` : ""
+                }`}
+              >
                 {agendaItem.subtitle}
               </p>
             )}
