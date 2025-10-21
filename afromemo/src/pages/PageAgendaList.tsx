@@ -467,7 +467,9 @@ const AgendaListView = () => {
                         {item.category && (
                           <p className="flex justify-between">
                             <span
-                              className={`inline-block text-xs px-2 py-1 rounded-full`}
+                              className={`inline-block text-xs px-2 py-1 rounded-full ${getStatusBadgeClass(
+                                item.status
+                              )}`}
                             >
                               {Categories[
                                 item.category as keyof typeof Categories
