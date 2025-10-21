@@ -24,7 +24,7 @@ const PageUserCondition = () => {
           les consultent peuvent sélectionner, des événements répartis sous les
           rubriques suivantes&nbsp;:
         </p>
-        <ul className="mb-6 pt-6 pl-12 list-disc font-semibold">
+        <ul className="mb-6 pt-6 pl-12 list-disc font-semibold text-left">
           <li>Musiques et fêtes</li>
           <li>
             Spectacles{" "}
@@ -57,7 +57,7 @@ const PageUserCondition = () => {
           suivantes&nbsp;:
         </p>
 
-        <ul className="mb-6 pl-12 list-disc font-semibold">
+        <ul className="mb-6 pl-12 list-disc font-semibold text-left">
           <li>
             Dans le Grand Genève{" "}
             <span className="text-sm">

@@ -64,6 +64,7 @@ func (rl *RateLimiter) cleanup() {
 				}
 			}
 			rl.mu.Unlock()
+		default:
 
 		}
 	}

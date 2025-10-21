@@ -85,7 +85,6 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   ) => {
     const target = e.target as HTMLInputElement;
     let { name, value } = target;
-
     if (name == "status") {
       setFormData({
         ...formData,
@@ -346,7 +345,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
             id="price"
             name="price"
             className="w-full p-2 border rounded"
-            placeholder="Ex: Tarif normal/Tarif réduit devise ou Pass 1 jour 30/35 - Pass 2 jours 45/40 "
+            placeholder="Ex: Tarif normal/réduit devise ou Pass 1 jour 35/30 - Pass 2 jours 45/40 "
             value={formData.price}
             onChange={handleChange}
           />
@@ -534,7 +533,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
         </div>
         <div className="mb-4">
           <label className="block text-gray-700 mb-2" htmlFor="infos">
-            Info additionnelle
+            Informations additionnelles
           </label>
           <Diffviewer fieldGetter={getFieldDiff} field="infos" />
           <textarea

@@ -346,8 +346,7 @@ func deleteSubmission(services *ServiceMiddleWare, writer http.ResponseWriter, r
 	// deleted linked agenda
 	err = services.agendaRepository.UpdateStatus(submission.ID, int(db.Status_Deleted))
 	if err != nil && err != repository.ErrNoAgendaEntryFound {
-		fmt.Sprintf("UpdateStatus::Error %s\n", err)
-		createErrorResponse(writer, "Error while removing linked agenda entry", http.StatusInternalServerError)
+		fmt.Printf("UpdateStatus::Error %s\n", err)
 		return
 	}
 	writeJSONResponse(writer, http.StatusOK, OkResponse{
@@ -381,9 +380,9 @@ func ConfirmSubmission(services *ServiceMiddleWare) func(http.ResponseWriter, *h
 			})
 			return
 		}
-		fmt.Println("Status %s", submission.Status)
+		fmt.Printf("<Radical blaze::::%+v>", submission)
 		if submission.Status != "unconfirmed" {
-			writeJSONResponse(writer, http.StatusOK, OkResponse{
+			writeJSONResponse(writer, http.StatusUnprocessableEntity, ErrorResponse{
 				Message: "Already confirmed",
 			})
 			return
@@ -391,7 +390,7 @@ func ConfirmSubmission(services *ServiceMiddleWare) func(http.ResponseWriter, *h
 		// validate confirmation token
 		if time.Now().After(submission.CreatedAt.Add(24 * time.Hour)) {
 			writeJSONResponse(writer, http.StatusUnauthorized, ErrorResponse{
-				Message: "Validation Token expired",
+				Message: "Validation expired",
 			})
 			return
 		}
@@ -445,7 +444,6 @@ func SubmissionHandler(services *ServiceMiddleWare) func(http.ResponseWriter, *h
 					}
 					var agenda db.AgendaEntry
 					_ = json.Unmarshal([]byte(submission.Data), &agenda)
-					// Format times
 
 					response := VisitorFormRequest{
 						ID:       submission.ID,
@@ -453,6 +451,14 @@ func SubmissionHandler(services *ServiceMiddleWare) func(http.ResponseWriter, *h
 						Email:    submission.Email,
 						FormData: agenda,
 					}
+					if time.Now().After(submission.CreatedAt.Add(time.Hour * 24 * 7)) {
+						writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
+							Error:   true,
+							Message: "Submission expired",
+						})
+						return
+					}
+
 					json.NewEncoder(writer).Encode(response)
 				}
 			} else {
@@ -489,7 +495,7 @@ func SubmissionHandler(services *ServiceMiddleWare) func(http.ResponseWriter, *h
 			var data map[string]interface{}
 			err = json.Unmarshal([]byte(submission.Data), &data)
 			if err != nil {
-				fmt.Printf("&v", err)
+				fmt.Printf("%+v", err)
 				createErrorResponse(writer, "Misformed submission", http.StatusUnprocessableEntity)
 				return
 			}

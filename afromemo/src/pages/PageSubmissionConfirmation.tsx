@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
+type ResponseData = {
+  message: string;
+  error: boolean;
+};
+
 const PageSubmissionConfirmation = () => {
   const { tokenId } = useParams();
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isOk, setIsOk] = useState<boolean>(false);
+  const [data, setData] = useState<ResponseData | null>(null);
 
   useEffect(() => {
     const doConfirm = async () => {
@@ -17,6 +23,8 @@ const PageSubmissionConfirmation = () => {
         setLoading(false);
         setIsOk(true);
       } else {
+        const data = await response.json();
+        setData(data);
         setLoading(false);
         setIsOk(false);
       }
@@ -42,7 +50,15 @@ const PageSubmissionConfirmation = () => {
         </div>
       )}
       {!isOk && !isLoading && (
-        <p>Une erreur s'est produite pendant la validation de votre email.</p>
+        <div>
+          <p>Une erreur s'est produite pendant la validation de votre email.</p>
+          {data?.message == "Already confirmed" && (
+            <p>Votre adresse email a déjà été validée.</p>
+          )}
+          {data?.message == "Validation expired" && (
+            <p>Le lien de validation a expiré !</p>
+          )}
+        </div>
       )}
     </div>
   );

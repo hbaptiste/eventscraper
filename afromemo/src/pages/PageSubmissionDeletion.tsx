@@ -12,7 +12,10 @@ export const PageSubmissionDeletion = () => {
   const { data: userSubmission, error } = useFetchItem<UserSubmission>(
     `/api/submissions/${tokenId}`
   );
-  useEffect(() => {}, [userSubmission]);
+
+  useEffect(() => {
+    console.log("<error>", error);
+  }, [userSubmission, error]);
 
   // effect
   const onHandleClick = async (
@@ -43,20 +46,28 @@ export const PageSubmissionDeletion = () => {
         <div>
           <p>Votre événement doit encore être validé avant d'être publié.</p>
           <a className="text-afm-orange-3" href="#" onClick={onHandleClick}>
-            Cliquer ici pour annuler sa publication.
+            Cliquer ici si vous désirez annuler sa publication.
           </a>
         </div>
       )}
 
       {userSubmission && userSubmission.status == "active" && (
         <div>
-          <p>Vous événement a déja été publié sur la plateforme.</p>
+          <p>Votre événement a déja été publié sur la plateforme.</p>
           <a className="text-afm-orange-3" href="#" onClick={onHandleClick}>
             Cliquer ici si l'événement a été annulé.
           </a>
         </div>
       )}
-      {!error && (
+      {error && error.message == "Submission expired" && (
+        <div>
+          <p>Votre lien de suppression a expiré.</p>
+          <a className="text-afm-orange-3" href="/">
+            Retour à la page d'accueil
+          </a>
+        </div>
+      )}
+      {error && error.message !== "Submission expired" && (
         <div>
           <p className="error">
             Une erreur s'est produite, votre événement n'a pas été trouvé sur

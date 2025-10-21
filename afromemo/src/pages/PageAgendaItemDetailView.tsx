@@ -220,7 +220,7 @@ export default function PageAgendaItemDetailView() {
             {agendaItem.infos && (
               <div className="mb-8">
                 <h2 className="text-xl font-semibold mb-3">
-                  Informations Complémentaires
+                  Informations additionnelles
                 </h2>
                 <div className="bg-gray-50 rounded-lg p-4 flex items-start">
                   <Info

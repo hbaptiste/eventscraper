@@ -1,4 +1,4 @@
-import { AgendaItem, Categories, Places } from "../types";
+import { AgendaItem, Categories, Places, Status } from "../types";
 import useAuthStore from "../store/useAuthStore";
 
 export const generateICSFile = (agendaItem: AgendaItem) => {
@@ -119,6 +119,10 @@ export const generateICSFile = (agendaItem: AgendaItem) => {
 
 export const getPlace = (key: Places): string => {
   return Places[key.toUpperCase() as unknown as keyof typeof Places] || key;
+};
+
+export const getStatus = (key: Status): string => {
+  return (Status[key] as unknown as keyof typeof Status) || "unknown";
 };
 
 export const getCategory = (key: string): string => {

@@ -46,8 +46,10 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
   const [email, setEmail] = useState<string>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [submissionID, setSubmissionID] = useState<string>("");
+  const [hasExpired, setHasExpired] = useState<boolean>(false);
   const [displayConfirmation, setDisplayConfirmation] =
     useState<boolean>(false);
+  const [hasError, setHasError] = useState<boolean>(false);
 
   const { isAdmin: actualIsAdmin, token } = useUserInfos();
 
@@ -135,15 +137,29 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
 
   // only with token
   const loadSubmission = async (tokenId: string) => {
-    const response = await fetch(`/api/submissions/${tokenId}`, {});
-    const { formData, email, id } = (await response.json()) as UserSubmission;
-
-    formData.tags = Array.isArray(formData.tags) ? formData.tags : [];
-    formData.email = email;
-    formData.id = id;
-    setFormData(formData);
-    setEmail(email);
-    setSubmissionID(id);
+    try {
+      const response = await fetch(`/api/submissions/${tokenId}`, {});
+      setIsLoading(false);
+      if (!response.ok) {
+        setHasError(true);
+        const { message } = await response.json();
+        console.log(message);
+        if (message == "Submission expired") {
+          setHasExpired(true);
+        }
+      } else {
+        const { formData, email, id } =
+          (await response.json()) as UserSubmission;
+        formData.tags = Array.isArray(formData.tags) ? formData.tags : [];
+        formData.email = email;
+        formData.id = id;
+        setFormData(formData);
+        setEmail(email);
+        setSubmissionID(id);
+      }
+    } catch (e) {
+      alert("sdsd");
+    }
   };
 
   useEffect(() => {
@@ -156,6 +172,16 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
 
   return (
     <div className="_justify-center _max-w-2xl w-full mx-auto p-6 bg-white mb-5 rounded shadow">
+      {hasError && hasExpired && (
+        <div>
+          <p>Votre lien d'édition a expiré.</p>
+          <a className="text-afm-orange-3" href="/">
+            Retour à la page d'accueil
+          </a>
+        </div>
+      )}
+      {hasError && !hasExpired && <p>Une erreur s'est produite.</p>}
+
       {!displayConfirmation && formData && (
         <>
           <h2 className="text-2xl font-bold mb-6">
@@ -171,7 +197,7 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
           />
         </>
       )}
-      {!formData && <>loading...</>}
+      {isLoading && <>loading...</>}
       {displayConfirmation && (
         <div>
           {!tokenId && (

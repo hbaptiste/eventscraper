@@ -64,8 +64,11 @@ type AgendaStatusRequest struct {
 	Status int    `json:"status"`
 }
 
+type Response interface {
+	IsResponse() bool
+}
 type ErrorResponse struct {
-	Response
+	BaseResponse
 	Message string `json:"message"`
 	Error   bool   `json:"error"`
 }
@@ -74,10 +77,6 @@ type PublishActionRequest struct {
 	FormData db.AgendaEntry `json:"formData"`
 	Action   string         `json:"action"`
 	Token    string         `json:"token"`
-}
-
-type Response interface {
-	IsResponse() bool
 }
 
 type BaseResponse struct{}
@@ -136,6 +135,7 @@ type ServiceMiddleWare struct {
 	userRepository   repository.UserRepository
 	queries          gendb.Queries
 	mailer           utils.Mailer
+	eventBroker      utils.EventNotification
 }
 
 func NewServiceMiddleWare(db *sql.DB) *ServiceMiddleWare {
@@ -153,6 +153,7 @@ func NewServiceMiddleWare(db *sql.DB) *ServiceMiddleWare {
 		userRepository:   *repository.NewUserRepository(db),
 		queries:          *gendb.New(db),
 		mailer:           *utils.NewMailer(mailerConf),
+		eventBroker:      *utils.NewEventNotication(),
 	}
 }
 
@@ -328,6 +329,7 @@ func refeshTokenWithServices(sc *ServiceMiddleWare) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
 		if req.Method != http.MethodPost {
 			writeJSONResponse(resp, http.StatusBadRequest, ErrorResponse{
+				Error:   true,
 				Message: "Method not allowed",
 			})
 			return
@@ -975,7 +977,10 @@ func StartApiServer(portNumber int) {
 
 	// <mux>
 	mux := http.NewServeMux()
-	//
+
+	// event broker
+	serviceMiddleWare.eventBroker.Start(mux)
+
 	tmpImgServer := NewTmpFileServer("/tmp")
 	// auth routes
 	mux.HandleFunc("/api/login", loginHandler)
@@ -1041,7 +1046,7 @@ func StartApiServer(portNumber int) {
 	mux.Handle("/api/protected/", http.HandlerFunc(corsProtected))
 
 	listenAddr := ":" + strconv.Itoa(portNumber)
-	fmt.Println("Starting Api server of port %s", listenAddr)
+	fmt.Printf("Starting Api server of port[%s]\n", listenAddr)
 	if err := http.ListenAndServe(listenAddr, mux); err != nil {
 		fmt.Println("Error starting server:", err)
 	}

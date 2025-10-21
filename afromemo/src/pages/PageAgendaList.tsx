@@ -5,7 +5,7 @@ import useGetSubmissions from "../hooks/useGetSubmissions";
 import useUserInfos from "../hooks/useUserInfos";
 import useAuthStore from "../store/useAuthStore";
 import { AgendaItem, Places, Status, Categories } from "../types";
-import { fetch, formatDateRange, getPlace } from "../utils/main";
+import { fetch, formatDateRange, getPlace, getStatus } from "../utils/main";
 
 const AgendaListView = () => {
   const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
@@ -46,6 +46,14 @@ const AgendaListView = () => {
   const { submissions } = useGetSubmissions(isAdmin);
 
   const navigate = useNavigate();
+  /*const eventSource = new EventSource(
+    "http://localhost:8082/events-notification"
+  );
+
+  eventSource.onmessage = (event) => {
+    console.log("<message>");
+    console.log(event);
+  };*/
 
   useEffect(() => {
     if (isAdmin == null) return;
@@ -457,15 +465,24 @@ const AgendaListView = () => {
                           {item.subtitle}
                         </h3>
                         {item.category && (
-                          <span
-                            className={`inline-block text-xs px-2 py-1 rounded-full ${getStatusBadgeClass(
-                              item.status
-                            )}`}
-                          >
-                            {Categories[
-                              item.category as keyof typeof Categories
-                            ] || item.category}
-                          </span>
+                          <p className="flex justify-between">
+                            <span
+                              className={`inline-block text-xs px-2 py-1 rounded-full`}
+                            >
+                              {Categories[
+                                item.category as keyof typeof Categories
+                              ] || item.category}
+                            </span>
+                            {isAdmin && (
+                              <span
+                                className={`inline-block text-xs px-2 py-1 rounded-full ${getStatusBadgeClass(
+                                  item.status
+                                )}`}
+                              >
+                                {getStatus(item.status)}
+                              </span>
+                            )}
+                          </p>
                         )}
                       </div>
 

@@ -18,10 +18,12 @@ const useFetchItem = <T extends unknown>(
       try {
         const response = await fetch(url, { signal });
         if (!response.ok) {
-          setError(error);
+          const { message } = await response.json();
+          setError(new Error(message));
+        } else {
+          const data = (await response.json()) as T;
+          setData(data);
         }
-        const data = (await response.json()) as T;
-        setData(data);
       } catch (err) {
         if (err instanceof Error && err.name !== "AbortError") {
           setError(err);
