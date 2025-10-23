@@ -500,7 +500,7 @@ func getAllEvents(resp http.ResponseWriter, req *http.Request) {
 	queryFilter["status"] = 1
 
 	userId := req.Context().Value(userIDKey)
-	log.Printf("Current userId %d", userId)
+	log.Printf("Current userId %s", userId)
 	if userId != nil {
 		userRepo, err := GetRepository[repository.UserRepository](req.Context(), userRepoKey)
 		if err != nil {
@@ -530,7 +530,6 @@ func getAllEvents(resp http.ResponseWriter, req *http.Request) {
 		http.Error(resp, "Fail to load events", http.StatusInternalServerError)
 		return
 	}
-
 	json.NewEncoder(resp).Encode(events)
 }
 

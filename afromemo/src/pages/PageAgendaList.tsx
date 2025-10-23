@@ -66,6 +66,7 @@ const AgendaListView = () => {
   // Fetch agenda items from API
   useEffect(() => {
     if (!entries) return;
+    console.log(entries, submissions);
     setLoading(false);
     setAgendaItems(entries);
   }, [entries, submissions]);

@@ -29,6 +29,7 @@ vars:
   MIGRATIONS_PATH: "./internal/db/migrations"
   TEMPLATES_PATH: "./internal/templates"
   BACKEND_EXECUTABLE_NAME: api_server
+  BACKEND_ADMIN_CLI: admin_cli
   
   # PID
   PID_FILE: "{{.REMOTE_API_DIR}}/{{.BACKEND_EXECUTABLE_NAME}}.pid"
@@ -53,9 +54,11 @@ tasks:
     cmds:
       - echo "Building Go Backend"
       - GOOS=linux GOARCH=amd64 go build -o {{.LOCAL_BUILD_PATH}}/{{.BACKEND_EXECUTABLE_NAME}} ./main.go
+      - GOOS=linux GOARCH=amd64 go build -o {{.LOCAL_BUILD_PATH}}/{{.BACKEND_ADMIN_CLI}} ./cmd/admin-cli/main.go
       - echo "{{.BACKEND_EXECUTABLE_NAME}} build"
     generates:
       - "{{.LOCAL_BUILD_PATH}}/{{.BACKEND_EXECUTABLE_NAME}}"
+      - "{{.LOCAL_BUILD_PATH}}/{{.BACKEND_ADMIN_CLI}}"
   
   apiserver:start:
     desc: Start the server locally
@@ -85,6 +88,8 @@ tasks:
 
   deploy:transfer:
     desc: Transfer build to server
+    dep:
+      - task: deploy:backup-db
     cmds:
       - echo "Transfering <env, db, conf> to SERVER_HOST"
       - scp -r {{.LOCAL_BUILD_PATH}}/* {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_API_DIR}}/
@@ -199,6 +204,10 @@ tasks:
       - echo "copy stage db to local"
       - scp {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_API_DIR}}/agenda.db agenda.db
 
+  db:seed:
+    desc: Create admin user
+    cmds: 
+      - go run ./cmd/admin-cli/main.go create-admin --username {{.ADMIN_USER}} --password {{.ADMIN_PASSWORD}}
 
   deploy:permission:
     desc: Sets execute permission on the backend

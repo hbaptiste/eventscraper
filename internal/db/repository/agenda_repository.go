@@ -77,7 +77,7 @@ func (repo *AgendaRepository) Create(ctx context.Context, entity *db.AgendaEntry
 }
 
 func (repo *AgendaRepository) FindAll(ctx context.Context, filter Filter) ([]db.AgendaEntry, error) {
-	var entries []db.AgendaEntry
+	entries := []db.AgendaEntry{}
 
 	var criteria []string
 	criteria = append(criteria, "WHERE 1=1")
