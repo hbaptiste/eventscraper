@@ -40,7 +40,7 @@ export const PageSubmissionDeletion = () => {
 
   return (
     <div className="w-full mx-auto p-6 bg-white mb-5 rounded shadow">
-      <h2 className="text-2xl font-bold mb-6">Suppression</h2>
+      <h2 className="text-2xl font-bold mb-6">Annulation</h2>
 
       {userSubmission && userSubmission.status == "" && (
         <div>

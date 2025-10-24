@@ -102,11 +102,14 @@ const AgendaListView = () => {
           item.tags.join(" ").toLowerCase().includes(searchLower)
         );
       }
-      if (filter.place) {
-        return item.place.trim() == filter.place.trim();
-      }
       return true;
     });
+
+    if (filter.place) {
+      filteredItems = filteredItems.filter(
+        (item) => item.place.trim() == filter.place.trim()
+      );
+    }
 
     if (filter.userSubmitted == false) {
       filteredItems = filteredItems.filter(

@@ -29,8 +29,6 @@ var createCmd = &cobra.Command{
 	Short: "Create a new admin (superuser) in the database.",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Inside create-admin")
-		fmt.Printf("username--> %s\n", username)
-		fmt.Printf("password--> %s\n", password)
 		if password == "" {
 			fmt.Println("password can't be empty")
 			return
