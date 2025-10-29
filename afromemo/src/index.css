@@ -113,3 +113,7 @@ button:focus-visible {
     _color: #747bff;
   }
 }
+
+input[type="file"]::-webkit-file-upload-button {
+  color: initial;
+}

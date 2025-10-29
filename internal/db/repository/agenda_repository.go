@@ -239,10 +239,10 @@ func (repo *AgendaRepository) rowToAgendaEntry(row *sql.Row, entry *db.AgendaEnt
 	if endDate, err := time.Parse(dateLayout, endDateString); err == nil {
 		entry.EndDate = endDate
 	}
-	if startTime, err := time.Parse(timeLayout, startDateString); err == nil {
+	if startTime, err := time.Parse(timeLayout, startTimeString); err == nil {
 		entry.StartTime = startTime
 	}
-	if endTime, err := time.Parse(timeLayout, startDateString); err == nil {
+	if endTime, err := time.Parse(timeLayout, endTimeString); err == nil {
 		entry.EndTime = endTime
 	}
 

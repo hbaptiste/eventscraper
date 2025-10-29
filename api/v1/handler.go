@@ -661,7 +661,7 @@ func agendaHandler(resp http.ResponseWriter, req *http.Request) {
 					})
 					return
 				}
-
+				fmt.Printf("%+v\n", agendaEntry)
 				dataJSON, err := agendaEntry.ToJSON()
 				if err != nil {
 					writeJSONResponse(resp, http.StatusInternalServerError, ErrorResponse{

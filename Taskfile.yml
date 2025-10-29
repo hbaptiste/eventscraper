@@ -104,7 +104,10 @@ tasks:
 
       # db + htaccess
       - rsync -avz ./agenda.db {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_API_DIR}}/agenda.db
-      - rsync -avz ./remote/.htaccess {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.SERVER_HOME}}/.htaccess
+      - task: deploy:htaccess
+
+  deploy:htaccess:
+    - rsync -avz ./remote/{{.STAGE}}.htaccess {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.SERVER_HOME}}/.htaccess
 
   deploy:transfer-front:
     desc: Transfer front
@@ -256,6 +259,7 @@ tasks:
       #- front:build
       - build:backend
       - deploy:mkdirs
+      - deploy:stop-service
       - deploy:transfer
       - deploy:permission
       - deploy:start-service
