@@ -205,9 +205,8 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
       return;
     }
     formData.append("file", file);
-    const apiUrl = import.meta.env.VITE_API_URL;
-
-    const response = await fetch(`${apiUrl}/upload`, {
+    //const apiUrl = import.meta.env.VITE_API_URL;
+    const response = await fetch(`/api/upload`, {
       method: "POST",
       body: formData,
       headers: {

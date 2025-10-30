@@ -66,7 +66,6 @@ const AgendaListView = () => {
   // Fetch agenda items from API
   useEffect(() => {
     if (!entries) return;
-    console.log(entries, submissions);
     setLoading(false);
     setAgendaItems(entries);
   }, [entries, submissions]);
@@ -132,8 +131,8 @@ const AgendaListView = () => {
   const handleFilterChange = (
     e: React.ChangeEvent<
       HTMLSelectElement &
-        HTMLElement &
-        HTMLInputElement & { name: string; value: string | boolean }
+      HTMLElement &
+      HTMLInputElement & { name: string; value: string | boolean }
     >
   ) => {
     let { name, value } = e.target;
@@ -238,7 +237,7 @@ const AgendaListView = () => {
               "flex rounded-2xl border text-sm px-2 py-1 lg:px-4 lg:py-2 items-center hover:bg-afrm-yellow-2";
             const activeClassname = isClicked
               ? className +
-                " bg-afrm-yellow-2 text-afrm-black-1 border-afrm-orange-3"
+              " bg-afrm-yellow-2 text-afrm-black-1 border-afrm-orange-3"
               : className;
             return (
               <p
@@ -450,9 +449,8 @@ const AgendaListView = () => {
                       {/* Title and category */}
                       <div className="mb-3">
                         <h2
-                          className={`text-lg font-semibold text-gray-900 mb-1 ${
-                            item.status == Status.DELETED ? `line-through` : ""
-                          }`}
+                          className={`text-lg font-semibold text-gray-900 mb-1 ${item.status == Status.DELETED ? `line-through` : ""
+                            }`}
                         >
                           {item.title}
                           {item.status === Status.INACTIVE && (
@@ -462,9 +460,8 @@ const AgendaListView = () => {
                           )}
                         </h2>
                         <h3
-                          className={`text-gray-600 font-medium mb-1 ${
-                            item.status == Status.DELETED ? `line-through` : ""
-                          }`}
+                          className={`text-gray-600 font-medium mb-1 ${item.status == Status.DELETED ? `line-through` : ""
+                            }`}
                         >
                           {item.subtitle}
                         </h3>
@@ -557,15 +554,15 @@ const AgendaListView = () => {
                           )}
                         {(item.price.trim() == "" ||
                           item.price.trim() == "0.00") && (
-                          <div>
-                            <span className="text-xs text-gray-500 uppercase tracking-wide">
-                              Prix
-                            </span>
-                            <p className="text-sm text-gray-800 font-medium">
-                              Gratuit
-                            </p>
-                          </div>
-                        )}
+                            <div>
+                              <span className="text-xs text-gray-500 uppercase tracking-wide">
+                                Prix
+                              </span>
+                              <p className="text-sm text-gray-800 font-medium">
+                                Gratuit
+                              </p>
+                            </div>
+                          )}
                       </div>
 
                       {/* Tags */}
@@ -584,13 +581,13 @@ const AgendaListView = () => {
                             ))}
                           {item.tags.filter((tag) => tag.trim() != "").length >
                             4 && (
-                            <span className="text-xs text-gray-500 px-2 py-1">
-                              +
-                              {item.tags.filter((tag) => tag.trim() != "")
-                                .length - 4}{" "}
-                              more
-                            </span>
-                          )}
+                              <span className="text-xs text-gray-500 px-2 py-1">
+                                +
+                                {item.tags.filter((tag) => tag.trim() != "")
+                                  .length - 4}{" "}
+                                more
+                              </span>
+                            )}
                         </div>
                       )}
 

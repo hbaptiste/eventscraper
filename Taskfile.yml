@@ -87,7 +87,7 @@ tasks:
         '
 
   deploy:transfer:
-    desc: Transfer build to server
+    desc: Transfer local file to server
     dep:
       - task: deploy:backup-db
     cmds:
