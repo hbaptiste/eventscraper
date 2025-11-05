@@ -32,8 +32,8 @@ const AgendaListView = () => {
   });
 
   const [filteredItems, setFilteredItems] = useState<AgendaItem[]>(agendaItems);
-  const API_URL = import.meta.env.VITE_API_URL;
-  const BACKEND_IMAGE_URL = import.meta.env.VITE_BACKEND_IMAGE_PATH;
+  //const API_URL = import.meta.env.VITE_API_URL;
+  //const BACKEND_IMAGE_URL = import.meta.env.VITE_BACKEND_IMAGE_PATH;
 
   /**Token */
   const { token } = useAuthStore((state: any) => state);
@@ -67,7 +67,7 @@ const AgendaListView = () => {
   useEffect(() => {
     if (!entries) return;
     setLoading(false);
-    setAgendaItems(entries);
+    setAgendaItems((prev) => [...prev, ...entries]);
   }, [entries, submissions]);
 
   useEffect(() => {
@@ -176,7 +176,7 @@ const AgendaListView = () => {
     //removeItem
     const cleanedItems = filteredItems.filter((itm) => itm.id != item.id);
     setAgendaItems(cleanedItems);
-    await fetch(`${API_URL}/agenda/${item.id}`, {
+    await fetch(`/api/agenda/${item.id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -209,7 +209,7 @@ const AgendaListView = () => {
     });
 
     // Partial update here
-    const response = await fetch(`${API_URL}/agenda/${itemId}`, {
+    const response = await fetch(`/api/agenda/${itemId}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -389,12 +389,12 @@ const AgendaListView = () => {
                   >
                     {/* Poster image on the left */}
                     {item.poster && (
-                      <div className="w-full md:w-48 h-48 md:h-auto overflow-hidden relative group flex-shrink-0">
-                        <div className="flex relative">
+                      <div className="w-full sm:w-auto overflow-hidden relative group flex-shrink-0">
+                        <div className="flex h-full relative">
                           <img
-                            src={`${BACKEND_IMAGE_URL}/${item.poster}`}
+                            src={`/images/${item.poster}`}
                             alt={`Poster for ${item.title}`}
-                            className="w-full object-cover md:rounded-l-lg"
+                            className="w-full h-auto max-h-72 sm:w-auto sm:h-72 sm:max-h-none object-contain sm:object-cover sm:rounded-l-lg"
                             onError={(e) => {
                               e.currentTarget.src = "/placeholder.jpg";
                             }}

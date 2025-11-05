@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -39,7 +40,9 @@ func (t *TmpFileServer) isValidFilename(filename string) bool {
 func (t *TmpFileServer) ServeHandler(writer http.ResponseWriter, req *http.Request) {
 
 	filename := strings.TrimPrefix(req.URL.Path, "/images/tmp/")
+	log.Println("Serving %s", req.URL)
 	if t.isValidFilename(filename) == false {
+		log.Println("Invalid filename %s", filename)
 		http.Error(writer, "Invalid filename", http.StatusBadRequest)
 		return
 	}

@@ -54,8 +54,7 @@ const PageAgendaEntryForm: React.FC = (): React.ReactElement => {
   const [formUrl] = useState<string>("/api/protected/agenda");
 
   const handleSave = async (formData: AgendaItem) => {
-    console.log("<formdata>", formData);
-    return;
+
     const response = await fetch(formUrl, {
       headers: {
         Authorization: `Bearer ${token}`,

@@ -17,9 +17,10 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 # The [L] flag stops processing if this rule matches (and mod_proxy is enabled).
 # Ensure the RewriteBase is set correctly, or use the full path if needed.
 RewriteRule ^api/(.*)$ http://localhost:8082/api/$1 [P,L] # Requires mod_proxy and mod_proxy_http enabled!
-                                                         # Also ensure Go app listens on localhost:8080
+                                                         # Also ensure Go app listens on localhost:8082
 RewriteRule ^images/(.*)$ http://localhost:8082/images/$1 [P,L] # Requires mod_proxy and mod_proxy_http enabled!
 
+LimitRequestBody 10485760
 
 # --- 2. Serve React Static Files and handle SPA routing ---
 # Skip the following rules if the request is for an existing file or directory

@@ -116,8 +116,10 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 		}
 		// Origin
 		origin := req.Header.Get("Origin")
-		allowedOrigin := os.Getenv("FRONT_URL")
-		if origin != allowedOrigin {
+		allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
+
+		if !strings.Contains(allowedOrigins, origin) {
+			fmt.Printf("origin: %s, allowedOrigin %s", origin, allowedOrigins)
 			createErrorResponse(writer, "Invalid origin", http.StatusForbidden)
 			return
 		}

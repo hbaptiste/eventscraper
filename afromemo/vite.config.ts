@@ -16,6 +16,12 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      "/images": {
+        // ➡️ Target your actual backend server address
+        target: "http://localhost:8082",
+        secure: false,
+        changeOrigin: true,
+      },
       "/api": {
         target: "http://localhost:8082",
         changeOrigin: true,

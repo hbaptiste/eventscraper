@@ -33,7 +33,7 @@ export default function PageAgendaItemDetailView() {
     return <div className="not-found">Aucun événement trouvé !</div>; // Handle case where event is not found
   }
   // If no item is provided, use sample data
-  const BACKEND_IMAGE_URL = import.meta.env.VITE_BACKEND_IMAGE_PATH;
+  //const BACKEND_IMAGE_URL = import.meta.env.VITE_BACKEND_IMAGE_PATH;
 
   const [showFullDescription, setShowFullDescription] = useState(false);
   useEffect(() => {
@@ -81,7 +81,7 @@ export default function PageAgendaItemDetailView() {
           {/* Header Image */}
           <div className="relative h-64 w-full overflow-hidden">
             <img
-              src={`${BACKEND_IMAGE_URL}/${agendaItem.poster}`}
+              src={`/images/${agendaItem.poster}`}
               alt={agendaItem.title}
               className="w-full object-cover"
             />
@@ -102,18 +102,16 @@ export default function PageAgendaItemDetailView() {
           {/* Title and Subtitle Section */}
           <div className="px-6 pt-6 pb-4 border-b border-gray-100">
             <h2
-              className={`text-3xl font-bold text-gray-900 mb-2 ${
-                agendaItem.status == Status.DELETED ? `line-through` : ""
-              }`}
+              className={`text-3xl font-bold text-gray-900 mb-2 ${agendaItem.status == Status.DELETED ? `line-through` : ""
+                }`}
             >
               {agendaItem.title}
             </h2>
 
             {agendaItem.subtitle && (
               <p
-                className={`text-xl text-gray-600 font-medium ${
-                  agendaItem.status == Status.DELETED ? `line-through` : ""
-                }`}
+                className={`text-xl text-gray-600 font-medium ${agendaItem.status == Status.DELETED ? `line-through` : ""
+                  }`}
               >
                 {agendaItem.subtitle}
               </p>
@@ -196,9 +194,8 @@ export default function PageAgendaItemDetailView() {
               </h2>
               <div className={showFullDescription ? "" : "relative"}>
                 <p
-                  className={`text-gray-700 leading-relaxed whitespace-pre-line ${
-                    !showFullDescription && "line-clamp-3 "
-                  }`}
+                  className={`text-gray-700 leading-relaxed whitespace-pre-line ${!showFullDescription && "line-clamp-3 "
+                    }`}
                 >
                   {agendaItem.description}
                 </p>

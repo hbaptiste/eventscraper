@@ -45,7 +45,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   const [preview, setPreview] = useState<string | null>(null);
   const { showMessage } = useMessage();
 
-  const BACKEND_IMAGE_URL = import.meta.env.VITE_BACKEND_IMAGE_PATH;
+  //const BACKEND_IMAGE_URL = import.meta.env.VITE_BACKEND_IMAGE_PATH;
 
   // set Message helper
   const setErrorMessage = (message: string) => {
@@ -72,7 +72,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
       setShowEndDate(true);
     }
     if (itemCopy.poster && itemCopy.poster.length) {
-      setPreview(`${BACKEND_IMAGE_URL}/${itemCopy.poster}`);
+      setPreview(`/images${itemCopy.poster}`);
     }
     // handle image preview
   }, []); // only once
@@ -532,7 +532,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
         </div>
         <div className="mb-4">
           <label className="block text-gray-700 mb-2" htmlFor="infos">
-            Informations additionnelles
+            Informations complémentaires
           </label>
           <Diffviewer fieldGetter={getFieldDiff} field="infos" />
           <textarea

@@ -66,7 +66,7 @@ tasks:
       FRONT_URL: http://localhost:5173
       SECURED_COOKIES: false
     cmds:
-      - go run ./main.go
+      - air
     deps:
       - apiserver:stop
 
@@ -92,7 +92,7 @@ tasks:
       - task: deploy:backup-db
     cmds:
       - echo "Transfering <env, db, conf> to SERVER_HOST"
-      - scp -r {{.LOCAL_BUILD_PATH}}/* {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_API_DIR}}/
+      - rsync -avz {{.LOCAL_BUILD_PATH}}/* {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_API_DIR}}/
       - rsync -avz {{.LOCAL_FRONT_BUILD_PATH}}/* {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.SERVER_HOME}}/
      
       # migration
@@ -100,7 +100,6 @@ tasks:
       
       # templates
       - rsync -av --delete {{.TEMPLATES_PATH}}/ {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_TEPLATES_DIR}}
-
 
       # db + htaccess
       - rsync -avz ./agenda.db {{.SERVER_USER}}@{{.SERVER_HOST}}:{{.REMOTE_API_DIR}}/agenda.db

@@ -772,16 +772,16 @@ func uploadHandler(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	// 5 MB
-	err := req.ParseMultipartForm(5 << 10)
+	err := req.ParseMultipartForm(2 << 10)
 	if err != nil {
 		writeJSONResponse(resp, http.StatusBadRequest, ErrorResponse{
 			Error:   true,
-			Message: "File must be less then 5MB",
+			Message: "File must be less then 2 MB",
 		})
 		return
 	}
 
-	file, handler, err := req.FormFile("file")
+	file, header, err := req.FormFile("file")
 	if err != nil {
 		writeJSONResponse(resp, http.StatusBadRequest, ErrorResponse{
 			Error:   true,
@@ -792,7 +792,7 @@ func uploadHandler(resp http.ResponseWriter, req *http.Request) {
 	defer file.Close()
 
 	// save file to tmp
-	tmpPath, err := os.CreateTemp("/tmp", "poster*")
+	tmpPath, err := os.CreateTemp("/tmp", fmt.Sprintf("poster*%s", filepath.Ext(header.Filename)))
 	if err != nil {
 		log.Println("Error while creating a tmp file", err)
 		writeJSONResponse(resp, http.StatusBadRequest, ErrorResponse{
@@ -801,9 +801,7 @@ func uploadHandler(resp http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
-	newFilepath := filepath.Join("/tmp", handler.Filename)
-	// Rename
-	// defer os.Remove(tmpPath.Name())
+
 	// Copy file contents
 	_, err = io.Copy(tmpPath, file)
 	if err != nil {
@@ -815,21 +813,11 @@ func uploadHandler(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = os.Rename(tmpPath.Name(), newFilepath)
-	if err != nil {
-		log.Printf("Failed to rename temporary file from %s to %s: %v", tmpPath.Name(), newFilepath, err)
-		writeJSONResponse(resp, http.StatusBadRequest, ErrorResponse{
-			Error:   true,
-			Message: "Failed to rename temporary file",
-		})
-		return
-	}
-
 	writeJSONResponse(resp, http.StatusOK, OkResponse{
 		Success: true,
 		Data: map[string]string{
-			"filename": newFilepath,
-			"size":     fmt.Sprintf("%d bytes", handler.Size),
+			"filename": tmpPath.Name(),
+			"size":     fmt.Sprintf("%d bytes", header.Size),
 		},
 	})
 }
@@ -954,7 +942,11 @@ func StartApiServer(portNumber int) {
 	if FRONT_URL == "" {
 		log.Fatalf("FRONT_URL env variable is not set")
 	}
-
+	// Allowed origin
+	ALLOWED_ORIGINS := os.Getenv("ALLOWED_ORIGINS")
+	if ALLOWED_ORIGINS == "" {
+		log.Fatalf("ALLOWED_ORIGINS env variable is not set")
+	}
 	// init DB
 	localDb := db.InitDb() // change to command
 
@@ -1010,7 +1002,7 @@ func StartApiServer(portNumber int) {
 		fsStrippedHandler.ServeHTTP(resp, req)
 	})
 	mux.Handle("/images/", http.HandlerFunc(corsProtectedFs))
-	// handle /tmp/image
+	// handle /images/tmp/
 	mux.HandleFunc("/images/tmp/", tmpImgServer.ServeHandler)
 
 	// handle protected routes
