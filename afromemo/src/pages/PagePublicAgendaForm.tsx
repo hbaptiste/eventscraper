@@ -111,7 +111,6 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
         const { message } = await response.json()
 
         // Deal with rate limiter
-        console.log("<<response>>", response)
         if (response.status == 429) {
           const message = "Vous envoyez des requêtes trop rapidement. Veuillez patienter un instant et réessayer."
           const retryAfterSeconds = response.headers.get("Retry-After") || 30

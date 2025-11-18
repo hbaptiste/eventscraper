@@ -18,7 +18,6 @@ interface AgendaEntryFormProp {
   email?: string;
 }
 
-type ErrorInfos = Record<string, boolean>
 const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   props: AgendaEntryFormProp
 ): React.ReactElement => {
@@ -41,10 +40,6 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
 
 
   // error message
-
-  const [firstErrorField, setFirstErrorField] = useState(null);
-
-  const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const { showMessage } = useMessage();
 
@@ -204,7 +199,6 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
       );
       return;
     }
-    setLoading(true);
     const status = parseInt(formData.status.toString());
     formData.status = status;
 
