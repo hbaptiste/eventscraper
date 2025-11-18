@@ -184,7 +184,7 @@ func (entry *AgendaEntry) Validate() error {
 	var errorsList []string
 	if !entry.EndDate.IsZero() {
 		if entry.EndDate.Before(entry.StartDate) {
-			errorsList = append(errorsList, "end date must be after or equal to start date")
+			errorsList = append(errorsList, "End date must be after or equal to start date")
 		}
 	}
 
@@ -193,7 +193,7 @@ func (entry *AgendaEntry) Validate() error {
 		if entry.EndDate.IsZero() || entry.EndDate.Equal(entry.StartDate) {
 			// Same day event
 			if entry.EndTime.Before(entry.StartTime) {
-				errorsList = append(errorsList, "end time must be after or equal to start time")
+				errorsList = append(errorsList, "End time must be after or equal to start time")
 			}
 		} else {
 			// Multi-day event
@@ -210,13 +210,13 @@ func (entry *AgendaEntry) Validate() error {
 			)
 
 			if fullEnd.Before(fullStart) {
-				errorsList = append(errorsList, "end date and time must be after start date and time")
+				errorsList = append(errorsList, "End date and time must be after start date and time")
 			}
 		}
 	}
 
 	if len(errorsList) > 0 {
-		return fmt.Errorf(strings.Join(errorsList, "; "))
+		return fmt.Errorf("%s", strings.Join(errorsList, "; "))
 	}
 
 	return nil

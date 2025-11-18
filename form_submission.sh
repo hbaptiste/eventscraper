@@ -10,9 +10,10 @@ curl -X POST "http://localhost:5173/api/submissions" \
   -H "Origin: http://localhost:5173" \
   -d '{
         "formData":{
-            "title": "Second Patrovksi plage..",
-            "subtitle": "Second This is my subtitle",
-            "place": "23 rue de la gare",
+            "title": "",
+            "subtitle": "",
+            "place": "",
+            "price": "",
             "description": "This is a test submission",
             "address": "Kromae 12",
             "venuename": "strange",

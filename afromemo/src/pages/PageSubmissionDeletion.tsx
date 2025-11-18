@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import useFetchItem from "../hooks/useFetchItem";
 import { useMessage } from "../hooks/useMessage";
@@ -12,10 +12,6 @@ export const PageSubmissionDeletion = () => {
   const { data: userSubmission, error } = useFetchItem<UserSubmission>(
     `/api/submissions/${tokenId}`
   );
-
-  useEffect(() => {
-    console.log("<error>", error);
-  }, [userSubmission, error]);
 
   // effect
   const onHandleClick = async (

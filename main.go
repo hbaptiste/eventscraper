@@ -2,7 +2,6 @@ package main
 
 import (
 	"dpatrov/scraper/api/v1"
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -24,6 +23,7 @@ func main() {
 	if err != nil {
 		log.Fatalln("Error converting '%s': %v\n", portInt)
 	}
-	fmt.Printf("Port int %d!", portInt)
+
 	api.StartApiServer(portInt)
+
 }

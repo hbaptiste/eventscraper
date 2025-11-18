@@ -4,9 +4,9 @@ tmp_dir = "tmp"
 
 [build]
   args_bin = []
-  bin = "./build"
-  cmd = "go run ./main.go"
-  delay = 1000
+  bin = "./build/"
+  cmd = "./build/main"
+  delay = 6000
   exclude_dir = ["afromemo", "remote", "assets", "tmp", "vendor", "testdata"]
   exclude_file = []
   exclude_regex = ["_test.go"]
@@ -16,15 +16,15 @@ tmp_dir = "tmp"
   include_dir = []
   include_ext = ["go", "tpl", "tmpl", "html"]
   include_file = []
-  kill_delay = "0s"
+  kill_delay = "6s"
   log = "build-errors.log"
   poll = false
   poll_interval = 0
   post_cmd = []
-  pre_cmd = []
+  pre_cmd = ["go build -o ./build/main"]
   rerun = false
   rerun_delay = 500
-  send_interrupt = false
+  send_interrupt = true
   stop_on_error = false
 
 [color]

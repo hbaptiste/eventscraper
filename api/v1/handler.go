@@ -11,6 +11,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
+	"os/signal"
+	"syscall"
+
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/tiff"
+	_ "golang.org/x/image/webp"
+
 	"io"
 	"log"
 	"net/http"
@@ -509,7 +520,7 @@ func getAllEvents(resp http.ResponseWriter, req *http.Request) {
 		}
 		user, err := userRepo.FindByID(req.Context(), userId.(int))
 		if err != nil {
-			log.Printf("Fail to get user with id %d: %v", userId.(int), err)
+			log.Printf("Fail to get user with id %d: %v \n", userId.(int), err)
 			writeJSONResponse(resp, http.StatusInternalServerError, ErrorResponse{
 				Message: "Internal Error.",
 				Error:   true,
@@ -546,7 +557,7 @@ func agendaStatusHandler(resp http.ResponseWriter, req *http.Request) {
 
 	agendaEntry, err := GetRepository[repository.AgendaRepository](req.Context(), agendaRepoKey)
 	if err != nil {
-		log.Printf("Internal error %w", err)
+		log.Printf("Internal error %v\n", err)
 		writeJSONResponse(resp, http.StatusInternalServerError, ErrorResponse{
 			Message: "Internal Error",
 		})
@@ -563,13 +574,13 @@ func agendaStatusHandler(resp http.ResponseWriter, req *http.Request) {
 	}
 	// Supprimer l'événement/supprimer
 	if statusRequest.Status == int(db.Status_Removed) {
-		log.Println("Deleting Event %s", statusRequest.Id)
+		log.Println("Deleting Event %s \n", statusRequest.Id)
 		if err := agendaEntry.Delete(req.Context(), statusRequest.Id); err != nil {
 			log.Printf("Internal Error while delete entry: %s\n", statusRequest.Id)
 		}
 		queries, err := GetRepository[gendb.Queries](req.Context(), serviceKey)
 		if err != nil {
-			log.Printf("Internal error %w", err)
+			log.Printf("Internal error %v", err)
 			return
 		}
 		log.Println("Deleting linked Submission for %s", statusRequest.Id)
@@ -756,7 +767,7 @@ func healthHandler(resp http.ResponseWriter, req *http.Request) {
 	}
 	value, ok := idUser.(string)
 	if !ok {
-		fmt.Errorf("context value in not of Type %s")
+		fmt.Errorf("context value in not of Type %s", ok)
 	}
 	fmt.Printf("UserId is %s", value)
 	resp.Write([]byte("server is running!"))
@@ -771,17 +782,19 @@ func uploadHandler(resp http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
-	// 5 MB
-	err := req.ParseMultipartForm(2 << 10)
+	// 2 MB
+	const MAX_UPLOAD_SIZE = 2 * 1024 * 1024
+	err := req.ParseMultipartForm(MAX_UPLOAD_SIZE) // 2*2^10
 	if err != nil {
+		log.Printf("Failed to parse form: %v\n", err)
 		writeJSONResponse(resp, http.StatusBadRequest, ErrorResponse{
 			Error:   true,
-			Message: "File must be less then 2 MB",
+			Message: "Failed to parse form",
 		})
 		return
 	}
 
-	file, header, err := req.FormFile("file")
+	file, handler, err := req.FormFile("file")
 	if err != nil {
 		writeJSONResponse(resp, http.StatusBadRequest, ErrorResponse{
 			Error:   true,
@@ -791,8 +804,33 @@ func uploadHandler(resp http.ResponseWriter, req *http.Request) {
 	}
 	defer file.Close()
 
+	// Checking size
+	if handler.Size > MAX_UPLOAD_SIZE {
+		log.Printf("File is too large; max size is 2MB\n")
+		writeJSONResponse(resp, http.StatusInternalServerError, ErrorResponse{
+			Error:   true,
+			Message: "Uploaded file is too large; max size is 2MB",
+		})
+		return
+	}
+	//// image.DecodeConfig reads just enough to determine format/dimensions.
+	_, format, err := image.DecodeConfig(file)
+	if err != nil {
+		// This file is NOT a valid image format.
+		log.Printf("Invalid or unsupported image file\n %v", err)
+		writeJSONResponse(resp, http.StatusInternalServerError, ErrorResponse{
+			Error:   true,
+			Message: "Invalid or unsupported image file",
+		})
+		return
+	}
+	log.Printf("format %v\n", format)
+	if seeker, ok := file.(io.Seeker); ok {
+		seeker.Seek(0, 0)
+	}
+
 	// save file to tmp
-	tmpPath, err := os.CreateTemp("/tmp", fmt.Sprintf("poster*%s", filepath.Ext(header.Filename)))
+	tmpPath, err := os.CreateTemp("/tmp", fmt.Sprintf("poster*%s", filepath.Ext(handler.Filename)))
 	if err != nil {
 		log.Println("Error while creating a tmp file", err)
 		writeJSONResponse(resp, http.StatusBadRequest, ErrorResponse{
@@ -817,7 +855,7 @@ func uploadHandler(resp http.ResponseWriter, req *http.Request) {
 		Success: true,
 		Data: map[string]string{
 			"filename": tmpPath.Name(),
-			"size":     fmt.Sprintf("%d bytes", header.Size),
+			"size":     fmt.Sprintf("%d bytes", handler.Size),
 		},
 	})
 }
@@ -1035,10 +1073,31 @@ func StartApiServer(portNumber int) {
 	})
 
 	mux.Handle("/api/protected/", http.HandlerFunc(corsProtected))
-
 	listenAddr := ":" + strconv.Itoa(portNumber)
-	fmt.Printf("Starting Api server of port[%s]\n", listenAddr)
-	if err := http.ListenAndServe(listenAddr, mux); err != nil {
-		fmt.Println("Error starting server:", err)
+
+	server := http.Server{
+		Addr:    listenAddr,
+		Handler: mux,
 	}
+
+	go func() {
+		log.Println("Starting the Server...")
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Could not listen: %v\n", err)
+		}
+	}()
+	// waiting signal
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	// wait for quit
+	sig := <-quit
+	log.Printf("Received signal: %v Initiating graceful shutdown...\n", sig)
+	// create a context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatalf("Server forced to shutdown after timeout: %v", err)
+	}
+	log.Println("Server successfully exited.")
+
 }

@@ -99,7 +99,6 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
     }
     try {
       setIsLoading(true);
-
       const response = await fetch(endpoint, {
         headers: {
           "X-CSRF-Token": await getCRSToken(),
@@ -109,12 +108,27 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
         body: JSON.stringify(request),
       });
       if (!response.ok) {
-        // const error = await response.json();
-        showMessage(
-          "Une erreur s'est produite! Merci de réessayer ultérieurement.",
-          { type: "error" }
-        );
-        setIsLoading(false);
+        const { message } = await response.json()
+
+        // Deal with rate limiter
+        console.log("<<response>>", response)
+        if (response.status == 429) {
+          const message = "Vous envoyez des requêtes trop rapidement. Veuillez patienter un instant et réessayer."
+          const retryAfterSeconds = response.headers.get("Retry-After") || 30
+          showMessage(
+            message,
+            { type: "error" }
+          );
+          setTimeout(() => {
+            setIsLoading(false);
+          }, retryAfterSeconds * 1000)
+        } else {
+          showMessage(
+            message,
+            { type: "error" }
+          );
+          setIsLoading(false);
+        }
         return;
       } else {
         if (isAdmin) {
@@ -143,7 +157,6 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
       if (!response.ok) {
         setHasError(true);
         const { message } = await response.json();
-        console.log(message);
         if (message == "Submission expired") {
           setHasExpired(true);
         }
@@ -158,7 +171,7 @@ const PagePublicAgendaForm: React.FC<AgendaFormProps> = (
         setSubmissionID(id);
       }
     } catch (e) {
-      alert("sdsd");
+      console.log(e)
     }
   };
 

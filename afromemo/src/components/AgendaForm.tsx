@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, FormEvent } from "react";
 import useEntryDiff from "../hooks/useEntryDiff";
 import { useMessage } from "../hooks/useMessage";
 import useUserInfos from "../hooks/useUserInfos";
@@ -18,6 +18,7 @@ interface AgendaEntryFormProp {
   email?: string;
 }
 
+type ErrorInfos = Record<string, boolean>
 const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   props: AgendaEntryFormProp
 ): React.ReactElement => {
@@ -38,8 +39,10 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
     (props?.agendaItem?.id as string) || ""
   );
 
-  // error
-  const [, setHasError] = useState<boolean>(false);
+
+  // error message
+
+  const [firstErrorField, setFirstErrorField] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -49,7 +52,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
 
   // set Message helper
   const setErrorMessage = (message: string) => {
-    setHasError(true);
+    // setHasError(true);
     showMessage(message, { type: "error", delay: 5000 });
   };
 
@@ -127,7 +130,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   };
 
   const validateEventPeriod = (): boolean => {
-    //setErrorMessage("");
+    // setErrorMessage("");
     const { startdate, enddate, starttime, endtime } = formData;
 
     // save for starttime and endtime
@@ -165,9 +168,28 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
     return true;
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+
     e.preventDefault();
     e.stopPropagation();
+    /** field validation form */
+    const form = e.target as HTMLFormElement
+    // Clean Previous Error
+    const errorClasses = ["border-red-500", 'ring-red-500', 'ring-1', 'ring-red-500']
+    form.querySelectorAll('.border, .outline').forEach(el => {
+      // Supprimer toutes les classes d'erreur possibles de la liste
+      errorClasses.forEach(cls => el.classList.remove(cls));
+    });
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      const firstInvalidField = form.querySelector(":invalid") as HTMLInputElement
+      if (firstInvalidField) {
+        firstInvalidField.classList.add("focus:outline-none", ...errorClasses);
+        firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstInvalidField.focus();
+      }
+      return
+    }
     let isValid = validateEventPeriod();
     if (!isValid) {
       return;
@@ -205,7 +227,7 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
       return;
     }
     formData.append("file", file);
-    //const apiUrl = import.meta.env.VITE_API_URL;
+    // const apiUrl = import.meta.env.VITE_API_URL;
     const response = await fetch(`/api/upload`, {
       method: "POST",
       body: formData,
@@ -217,12 +239,14 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
     const imageUrl = URL.createObjectURL(file);
     setPreview(imageUrl);
 
-    const { success, data } = await response.json();
+    const { success, data, message } = await response.json();
     if (success && data) {
       const newPostername = data?.filename as string;
       setFormData((formData) => {
         return { ...formData, poster: newPostername };
       });
+    } else {
+      setErrorMessage(message)
     }
   };
 
@@ -258,6 +282,8 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
   ) => {
     const target = e.target as HTMLInputElement;
     target.setCustomValidity("");
+    // Clear error classes
+    target.classList.remove('outline', 'outline-2', 'outline-red-500', 'border-red-500', 'ring-2', 'ring-red-500');
   };
 
   /* categories */
@@ -714,7 +740,8 @@ const AgendaEntryForm: React.FC<AgendaEntryFormProp> = (
         )}
         <button
           type="submit"
-          disabled={loading}
+          disabled={props.isLoading}
+          formNoValidate
           className="afromemo-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
         >
           {props.isLoading ? "..." : "Enregistrer"}

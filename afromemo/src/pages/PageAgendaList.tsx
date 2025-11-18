@@ -387,27 +387,26 @@ const AgendaListView = () => {
                     }}
                     className="flex flex-col md:flex-row"
                   >
-                    {/* Poster image on the left */}
-                    {item.poster && (
-                      <div className="w-full sm:w-auto overflow-hidden relative group flex-shrink-0">
-                        <div className="flex h-full relative">
-                          <img
-                            src={`/images/${item.poster}`}
-                            alt={`Poster for ${item.title}`}
-                            className="w-full h-auto max-h-72 sm:w-auto sm:h-72 sm:max-h-none object-contain sm:object-cover sm:rounded-l-lg"
-                            onError={(e) => {
-                              e.currentTarget.src = "/placeholder.jpg";
-                            }}
-                          />
-                          {item.status === Status.DELETED && (
-                            <div className="absolute right-0 flex items-center justify-center pointer-events-none">
-                              <div className="bg-red-600 text-white font-bold text-sm px-4 py-1 _rotate-[-25deg] shadow-lg opacity-90">
-                                ANNULÉ
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                    {/* Poster image on the left  h-full _md:w-auto object-contain md:object-contain */}
+                    {/*<div className="border flex w-full h-72 _md:justify-center _md:w-auto md:max-w-[33.333%] md:w-1/3 _md:h-80 _md:h-auto md:max-h-80 overflow-hidden relative md:items-start">*/}
 
+                    {item.poster && (
+                      <div className="w-full h-72 md:w-58 md:h-auto  md:max-h-80 overflow-hidden relative group flex-shrink-0">
+                        <img
+                          src={`/images/${item.poster}`}
+                          alt={`Poster for ${item.title}`}
+                          className="w-full h-full md:h-auto object-contain md:object-cover md:rounded-l-lg"
+                          onError={(e) => {
+                            e.currentTarget.src = "/placeholder.jpg";
+                          }}
+                        />
+                        {item.status === Status.DELETED && (
+                          <div className="absolute right-0 flex items-center justify-center pointer-events-none">
+                            <div className="bg-red-600 text-white font-bold text-sm px-4 py-1 _rotate-[-25deg] shadow-lg opacity-90">
+                              ANNULÉ
+                            </div>
+                          </div>
+                        )}
                         {isAdmin &&
                           itemIDToDelete !== item.id &&
                           !isFromUser(item) &&
@@ -445,7 +444,7 @@ const AgendaListView = () => {
                     )}
 
                     {/* Content section */}
-                    <div className="flex-1 p-4">
+                    <div className="flex-1 md:w-2/3 p-4">
                       {/* Title and category */}
                       <div className="mb-3">
                         <h2

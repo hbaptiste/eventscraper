@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -101,7 +102,7 @@ func createErrorResponse(writer http.ResponseWriter, msg string, status int) {
 	writer.WriteHeader(status)
 	json.NewEncoder(writer).Encode(Record{
 		"Error":   true,
-		"Message": msg,
+		"message": msg,
 	})
 }
 
@@ -111,7 +112,8 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 		// check token + rate
 		clientIP := internal.GetClientIP(req)
 		if !rateLimiter.Allow(clientIP) {
-			createErrorResponse(writer, "Too many requests", http.StatusTooManyRequests)
+			writer.Header().Set("Retry-After", "30") // Value is in seconds
+			createErrorResponse(writer, "Too many requests /minute", http.StatusTooManyRequests)
 			return
 		}
 		// Origin
@@ -140,17 +142,29 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 
 			err := json.NewDecoder(req.Body).Decode(&visitorRequest)
 			if err != nil {
-				fmt.Printf("<error> %v", err)
+				fmt.Printf("visitorRequest:Decode issue %v", err)
 				createErrorResponse(writer, "Failed to read body", http.StatusBadRequest)
 				return
 			}
 
 			_, issues := visitorRequest.isValid(validators.FormSubmissionSchema)
 			if issues != nil {
-				log.Printf("visitorRequest issues %v", issues)
-				createErrorResponse(writer, "Invalid request", http.StatusUnprocessableEntity)
+				writer.WriteHeader(http.StatusUnprocessableEntity)
+				errorMap := validators.FormatZogErrors(issues)
+				keys := make([]string, 0, len(errorMap))
+				for key := range errorMap {
+					keys = append(keys, key)
+				}
+				sort.Strings(keys)
+				firstkey := keys[0]
+				json.NewEncoder(writer).Encode(Record{
+					"error":   true,
+					"message": errorMap[firstkey],
+					"field":   firstkey,
+				})
 				return
 			}
+
 			// validate agenda entry
 			err = visitorRequest.FormData.Validate()
 			if err != nil {
@@ -183,7 +197,12 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 			// create or update Submission
 			var submissionParams = createFormParameters(*submissionData)
 			dataJson, err := json.Marshal(visitorRequest.FormData)
-			fmt.Printf("json:%+v", string(dataJson))
+			if err != nil {
+				createErrorResponse(writer, "Email missmatched", http.StatusUnprocessableEntity)
+				return
+			}
+
+			fmt.Printf("json:%+v\n", string(dataJson))
 			// edit mode
 			if visitorRequest.Token != "" { // edit
 				err = services.queries.UpdateSubmissionStatus(req.Context(), gendb.UpdateSubmissionStatusParams{
@@ -191,6 +210,14 @@ func HandlerVisitorForm(services *ServiceMiddleWare) func(http.ResponseWriter, *
 					Data:      string(dataJson),
 					EditToken: visitorRequest.Token,
 				})
+				if err != nil {
+					log.Printf("UpdateSubmissionStatus::error %+v", err)
+					writer.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(writer).Encode(map[string]string{
+						"error": "Error while updating submission status",
+					})
+					return
+				}
 				// Remove the previous agenda entry if it exists
 				/*err := services.agendaRepository.Delete(req.Context(), visitorRequest.ID)
 				if err != nil && err != repository.ErrNoAgendaEntryFound {
@@ -382,7 +409,7 @@ func ConfirmSubmission(services *ServiceMiddleWare) func(http.ResponseWriter, *h
 			})
 			return
 		}
-		fmt.Printf("<Radical blaze::::%+v>", submission)
+
 		if submission.Status != "unconfirmed" {
 			writeJSONResponse(writer, http.StatusUnprocessableEntity, ErrorResponse{
 				Message: "Already confirmed",
@@ -470,7 +497,7 @@ func SubmissionHandler(services *ServiceMiddleWare) func(http.ResponseWriter, *h
 
 		case http.MethodPost:
 			var fromRequest VisitorFormRequest
-			err := json.NewDecoder(req.Body).Decode(fromRequest)
+			err := json.NewDecoder(req.Body).Decode(&fromRequest)
 			if err != nil {
 				writeJSONResponse(writer, http.StatusAccepted, ErrorResponse{
 					Message: err.Error(),
@@ -489,7 +516,7 @@ func SubmissionHandler(services *ServiceMiddleWare) func(http.ResponseWriter, *h
 				EditToken: token,
 			})
 			if err != nil {
-				fmt.Printf("%v", err)
+				fmt.Printf("%v\n", err)
 				createErrorResponse(writer, "Submission not Found", http.StatusBadRequest)
 				return
 			}
@@ -548,6 +575,7 @@ func GetSubmissionDiff(service *ServiceMiddleWare) func(http.ResponseWriter, *ht
 
 			submission, err := service.queries.GetSubmissionByID(req.Context(), submissionID)
 			if err != nil {
+				log.Printf("GetSubmissionByID::error %v \n", err)
 				writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
 					Message: "Internal Error",
 				})
@@ -556,6 +584,7 @@ func GetSubmissionDiff(service *ServiceMiddleWare) func(http.ResponseWriter, *ht
 			var submissionData db.AgendaEntry
 			submission, err = fixPriceValue(submission)
 			if err != nil {
+				log.Printf("fixPriceValue::error %v \n", err)
 				writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
 					Message: "Internal Error",
 				})
@@ -563,6 +592,7 @@ func GetSubmissionDiff(service *ServiceMiddleWare) func(http.ResponseWriter, *ht
 			}
 			err = json.Unmarshal([]byte(submission.Data), &submissionData)
 			if err != nil {
+				log.Printf("jsonUnmarshal::error %v \n", err)
 				writeJSONResponse(writer, http.StatusInternalServerError, ErrorResponse{
 					Message: "Internal Error",
 				})
