@@ -1,3 +1,3 @@
-Afromémo: agenda d'événements culturels
+Afromemo: agenda d'événements culturels
 
 start with `task dev:start`
